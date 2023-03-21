@@ -2,11 +2,11 @@ import pytest
 
 # language=Python
 python_code = """
-from pytest_examples import find_examples, CodeExample, ExampleRunner
+from pytest_examples import find_examples, CodeExample, EvalExample
 import pytest
 
 @pytest.mark.parametrize('example', find_examples('.'))
-def test_find_run_examples(example: CodeExample, run_example: ExampleRunner):
+def test_find_run_examples(example: CodeExample, run_example: EvalExample):
     run_example.run(example)
 """
 
@@ -67,12 +67,12 @@ def test_ruff_ok(pytester: pytest.Pytester):
     # language=Python
     pytester.makepyfile(
         """
-from pytest_examples import find_examples, CodeExample, ExampleRunner
+from pytest_examples import find_examples, CodeExample, EvalExample
 import pytest
 
 @pytest.mark.parametrize('example', find_examples('.'))
-def test_find_run_examples(example: CodeExample, run_example: ExampleRunner):
-    run_example.ruff(example)
+def test_find_run_examples(example: CodeExample, run_example: EvalExample):
+    run_example.lint_ruff(example)
 """
     )
 
@@ -88,12 +88,12 @@ def test_ruff_error(pytester: pytest.Pytester):
     # language=Python
     pytester.makepyfile(
         """
-from pytest_examples import find_examples, CodeExample, ExampleRunner
+from pytest_examples import find_examples, CodeExample, EvalExample
 import pytest
 
 @pytest.mark.parametrize('example', find_examples('.'))
-def test_find_run_examples(example: CodeExample, run_example: ExampleRunner):
-    run_example.ruff(example)
+def test_find_run_examples(example: CodeExample, run_example: EvalExample):
+    run_example.lint_ruff(example)
 """
     )
 
@@ -113,12 +113,12 @@ def test_black_ok(pytester: pytest.Pytester):
     # language=Python
     pytester.makepyfile(
         """
-from pytest_examples import find_examples, CodeExample, ExampleRunner
+from pytest_examples import find_examples, CodeExample, EvalExample
 import pytest
 
 @pytest.mark.parametrize('example', find_examples('.'))
-def test_find_run_examples(example: CodeExample, run_example: ExampleRunner):
-    run_example.black(example)
+def test_find_run_examples(example: CodeExample, run_example: EvalExample):
+    run_example.lint_black(example)
 """
     )
 
@@ -134,12 +134,12 @@ def test_black_error(pytester: pytest.Pytester):
     # language=Python
     pytester.makepyfile(
         """
-from pytest_examples import find_examples, CodeExample, ExampleRunner
+from pytest_examples import find_examples, CodeExample, EvalExample
 import pytest
 
 @pytest.mark.parametrize('example', find_examples('.'))
-def test_find_run_examples(example: CodeExample, run_example: ExampleRunner):
-    run_example.black(example)
+def test_find_run_examples(example: CodeExample, run_example: EvalExample):
+    run_example.lint_black(example)
 """
     )
 
@@ -174,19 +174,19 @@ x =[
     # language=Python
     pytester.makepyfile(
         """
-from pytest_examples import find_examples, CodeExample, ExampleRunner
+from pytest_examples import find_examples, CodeExample, EvalExample
 import pytest
 
 @pytest.mark.parametrize('example', find_examples('.'))
-def test_find_run_examples(example: CodeExample, run_example: ExampleRunner):
-    run_example.black(example)
+def test_find_run_examples(example: CodeExample, run_example: EvalExample):
+    run_example.lint_black(example)
 """
     )
 
     result = pytester.runpytest('-p', 'no:pretty', '-v')
     result.assert_outcomes(failed=1)
 
-    e_lines = [line for line in result.outlines if line.startswith('E')]
+    e_lines = [line.strip() for line in result.outlines if line.startswith('E')]
     assert e_lines == [
         'E       Failed: black failed:',
         'E       --- before',
@@ -194,7 +194,7 @@ def test_find_run_examples(example: CodeExample, run_example: ExampleRunner):
         'E       @@ -4,8 +4 @@',
         'E       -x =[',
         'E       -    1,',
-        'E       -    2, ',
+        'E       -    2,',
         'E       -    3',
         'E       -]',
         'E       +x = [1, 2, 3]',

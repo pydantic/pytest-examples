@@ -2,7 +2,7 @@ from __future__ import annotations as _annotations
 
 import importlib.util
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from _pytest.assertion.rewrite import AssertionRewritingHook
@@ -12,10 +12,10 @@ from .lint import black_check, ruff_check
 if TYPE_CHECKING:
     from .find_examples import CodeExample
 
-__all__ = ('ExampleRunner',)
+__all__ = ('EvalExample',)
 
 
-class ExampleRunner:
+class EvalExample:
     def __init__(self, *, tmp_path: Path, pytest_config: pytest.Config):
         self.tmp_path = tmp_path
         self._pytest_config = pytest_config
@@ -38,12 +38,27 @@ class ExampleRunner:
         except KeyboardInterrupt:
             print(f'KeyboardInterrupt in example {self}')
 
-    def ruff(self, example: CodeExample, *, extra_ruff_args: tuple[str, ...] = ()) -> None:
+    def lint(
+        self, example: CodeExample, *, ruff: bool = True, black: bool = True, line_length: int | None = None
+    ) -> None:
+        if ruff:
+            self.lint_ruff(example, line_length=line_length)
+        if black:
+            self.lint_black(example, line_length=line_length)
+
+    def lint_ruff(
+        self,
+        example: CodeExample,
+        *,
+        extra_ruff_args: tuple[str, ...] = (),
+        line_length: int | None = None,
+        config: dict[str, Any] | None = None,
+    ) -> None:
         __tracebackhide__ = True
         module_path = self._write_file(example)
-        ruff_check(module_path, self.tmp_path, extra_ruff_args)
+        ruff_check(module_path, self.tmp_path, extra_ruff_args, line_length, config)
 
-    def black(self, example: CodeExample, *, line_length: int | None = None) -> None:
+    def lint_black(self, example: CodeExample, *, line_length: int | None = None) -> None:
         __tracebackhide__ = True
         black_check(example, line_length)
 

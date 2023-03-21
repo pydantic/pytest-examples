@@ -15,9 +15,27 @@ if TYPE_CHECKING:
 __all__ = 'ruff_check', 'black_check'
 
 
-def ruff_check(module_path: Path, tmp_path: Path, extra_ruff_args: tuple[str, ...] = ()) -> None:
+def ruff_check(
+    module_path: Path,
+    tmp_path: Path,
+    extra_ruff_args: tuple[str, ...],
+    line_length: int | None,
+    config: dict[str, Any] | None,
+) -> None:
     __tracebackhide__ = True
     args = 'ruff', 'check', str(module_path), *extra_ruff_args
+
+    config_content = ''
+    if line_length is not None:
+        config_content = 'line-length = {line_length}\n'
+    if config is not None:
+        config_content += '\n'.join(f'{k} = {v}' for k, v in config.items())
+
+    if config_content:
+        config_file = tmp_path / 'ruff.toml'
+        config_file.write_text(config_content)
+        args += '--config', str(config_file)
+
     p = subprocess.run(args, capture_output=True, text=True)
     if p.returncode != 0:
         output = p.stdout.replace(str(tmp_path), '<path>')
