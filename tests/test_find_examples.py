@@ -64,7 +64,7 @@ def func_b():
     d = 4
     assert c + d == 7
     ```
-    
+
     ```py
     e = 5
     f = 6

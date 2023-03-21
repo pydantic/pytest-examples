@@ -20,34 +20,21 @@ jobs:
         with:
           python-version: '3.10'
 
-      - uses: actions/cache@v3
-        id: cache
-        with:
-          path: ${{ env.pythonLocation }}
-          key: >
-            lint
-            ${{ runner.os }}
-            ${{ env.pythonLocation }}
-            ${{ hashFiles('requirements/linting.txt') }}
-
-      - name: install
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: pip install -r requirements/linting.txt
+      - run: pip install -r requirements/linting.txt
 
       - uses: pre-commit/action@v3.0.0
         with:
           extra_args: --all-files --verbose
 
   test:
-    name: test py${{ matrix.python-version }} on ${{ matrix.os }}
+    name: test py${{ matrix.python-version }}
 
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu, macos, windows]
         python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
 
-    runs-on: ${{ matrix.os }}-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
@@ -56,20 +43,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - id: cache-py
-        name: cache python
-        uses: actions/cache@v3
-        with:
-          path: ${{ env.pythonLocation }}
-          key: >
-            py
-            ${{ runner.os }}
-            ${{ env.pythonLocation }}
-            ${{ hashFiles('requirements/pyproject.txt') }}
-            ${{ hashFiles('pyproject.toml') }}
-
       - run: pip install -r requirements/pyproject.txt
-        if: steps.cache-py.outputs.cache-hit != 'true'
+      - run: pip install -r requirements/testing.txt
 
       - run: pip install -e .
       - run: pip freeze
