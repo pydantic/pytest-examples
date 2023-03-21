@@ -42,7 +42,15 @@ def _extract_code_chunks(path: Path, text: str, offset: int):
 
 def find_examples(*directories: str):
     for d in directories:
-        for path in Path(d).glob('**/*'):
+        dir_path = Path(d)
+        if dir_path.is_file():
+            paths = [dir_path]
+        elif dir_path.is_dir():
+            paths = dir_path.glob('**/*')
+        else:
+            raise ValueError(f'Not a file or directory: {d!r}')
+
+        for path in paths:
             if path.suffix == '.py':
                 code = path.read_text()
                 for m_docstring in re.finditer(r'(^\s*)r?"""$(.*?)\1"""', code, flags=re.M | re.S):

@@ -12,3 +12,14 @@ Pytest plugin for testing examples in docstrings and markdown files.
 ```bash
 pip install -U pytest-examples
 ```
+
+## Usage
+
+```py
+import pytest
+from pytest_examples import find_examples, CodeExample, ExampleRunner
+
+@pytest.mark.parametrize('example', find_examples('foo_dir', 'bar_file.py'))
+def test_docstrings(example: CodeExample, run_example: ExampleRunner):
+    run_example.run(example)
+```
