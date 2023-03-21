@@ -5,7 +5,7 @@ import pytest
 from .find_examples import CodeExample, find_examples
 from .run_examples import ExampleRunner
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 __all__ = 'find_examples', 'CodeExample', 'ExampleRunner'
 
 
