@@ -20,26 +20,30 @@ def ruff_check(
     tmp_path: Path,
     extra_ruff_args: tuple[str, ...],
     line_length: int | None,
-    config: dict[str, Any] | None,
+    ruff_config: dict[str, Any] | None,
 ) -> None:
     __tracebackhide__ = True
     args = 'ruff', 'check', str(module_path), *extra_ruff_args
 
     config_content = ''
     if line_length is not None:
-        config_content = 'line-length = {line_length}\n'
-    if config is not None:
-        config_content += '\n'.join(f'{k} = {v}' for k, v in config.items())
+        config_content = f'line-length = {line_length}\n'
+    if ruff_config is not None:
+        config_content += '\n'.join(f'{k} = {v}' for k, v in ruff_config.items())
 
     if config_content:
+        if '--config' in args:
+            raise RuntimeError("Custom `--config` can't be combined with `line_length` or `ruff_config` arguments")
         config_file = tmp_path / 'ruff.toml'
         config_file.write_text(config_content)
         args += '--config', str(config_file)
 
     p = subprocess.run(args, capture_output=True, text=True)
-    if p.returncode != 0:
-        output = p.stdout.replace(str(tmp_path), '<path>')
+    if p.returncode == 1:
+        output = p.stdout.replace(str(tmp_path), '<path>') or p.stderr
         pytest.fail(f'ruff failed:\n{output}')
+    elif p.returncode != 0:
+        raise RuntimeError(f'Error running ruff, return code {p.returncode}:\n{p.stderr or p.stdout}')
 
 
 def black_check(example: CodeExample, line_length: int | None = None) -> None:
