@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 # language=Python
@@ -108,8 +110,17 @@ def test_find_run_examples(example: CodeExample, run_example: EvalExample):
     result.assert_outcomes(failed=1)
 
     output = '\n'.join(result.outlines)
-    assert '<path>/my_file_1_4.py:2:8: F401 [*] `sys` imported but unused' in output
-    assert '<path>/my_file_1_4.py:3:7: F821 Undefined name `missing`' in output
+    output = re.sub(r'(=|_){3,}', r'\1\1\1', output)
+    assert (
+        '=== FAILURES ===\n'
+        '___ test_find_run_examples[my_file.md:1-4] ___\n'
+        'ruff failed:\n'
+        '  my_file.md:2:8: F401 [*] `sys` imported but unused\n'
+        '  my_file.md:3:7: F821 Undefined name `missing`\n'
+        '  Found 2 errors.\n'
+        '  [*] 1 potentially fixable with the --fix option.\n'
+        '=== short test summary info ===\n'
+    ) in output
 
 
 def test_black_ok(pytester: pytest.Pytester):

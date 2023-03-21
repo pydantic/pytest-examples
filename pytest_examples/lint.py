@@ -5,6 +5,7 @@ import subprocess
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
+from textwrap import indent
 from typing import TYPE_CHECKING, Any, Callable
 
 import pytest
@@ -16,14 +17,13 @@ __all__ = 'ruff_check', 'black_check'
 
 
 def ruff_check(
-    module_path: Path,
-    tmp_path: Path,
-    offset: int,
-    extra_ruff_args: tuple[str, ...],
-    line_length: int | None,
-    ruff_config: dict[str, Any] | None,
+    example: CodeExample,
+    file_path: Path,
+    extra_ruff_args: tuple[str, ...] = (),
+    line_length: int | None = None,
+    ruff_config: dict[str, Any] | None = None,
 ) -> None:
-    args = 'ruff', 'check', str(module_path), *extra_ruff_args
+    args = 'ruff', 'check', str(file_path), *extra_ruff_args
 
     config_content = ''
     if line_length is not None:
@@ -34,7 +34,7 @@ def ruff_check(
     if config_content:
         if '--config' in args:
             raise RuntimeError("Custom `--config` can't be combined with `line_length` or `ruff_config` arguments")
-        config_file = tmp_path / 'ruff.toml'
+        config_file = file_path.parent / 'ruff.toml'
         config_file.write_text(config_content)
         args += '--config', str(config_file)
 
@@ -42,10 +42,11 @@ def ruff_check(
     if p.returncode == 1 and p.stdout:
 
         def replace_offset(m: re.Match):
-            return f'<path>{m.group(1)}:{int(m.group(2)) + offset}'
+            line_number = int(m.group(1))
+            return f'{example.path}:{line_number + example.start_line}'
 
-        output = re.sub(rf'^{re.escape(str(tmp_path))}(/.*?\.py):(\d+)', replace_offset, p.stdout, flags=re.M)
-        pytest.fail(f'ruff failed:\n{output}', pytrace=False)
+        output = re.sub(rf'^{re.escape(str(file_path))}:(\d+)', replace_offset, p.stdout, flags=re.M)
+        pytest.fail(f'ruff failed:\n{indent(output, "  ")}', pytrace=False)
     elif p.returncode != 0:
         raise RuntimeError(f'Error running ruff, return code {p.returncode}:\n{p.stderr or p.stdout}')
 
@@ -61,7 +62,7 @@ def black_check(example: CodeExample, line_length: int | None = None) -> None:
             return f'{match.group(1)}{offset}{match.group(3)}'
 
         diff = re.sub(r'^(@@\s*)(.*)(\s*@@)$', replace_at_line, diff, flags=re.M)
-        pytest.fail(f'black failed:\n{diff}', pytrace=False)
+        pytest.fail(f'black failed:\n{indent(diff, "  ")}', pytrace=False)
 
 
 @lru_cache()

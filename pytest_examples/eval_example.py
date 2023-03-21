@@ -64,7 +64,7 @@ class EvalExample:
     ) -> None:
         __tracebackhide__ = True
         module_path = self._write_file(example)
-        ruff_check(module_path, self.tmp_path, example.start_line, extra_ruff_args, line_length, config)
+        ruff_check(example, module_path, extra_ruff_args, line_length, config)
 
     def lint_black(self, example: CodeExample, *, line_length: int | None = None) -> None:
         __tracebackhide__ = True
