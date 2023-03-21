@@ -36,7 +36,14 @@ assert a + b == 4
     result = pytester.runpytest('-p', 'no:pretty', '-v')
     result.assert_outcomes(passed=1, failed=1)
 
-    assert 'my_file_9_13.py:12: AssertionError' in '\n'.join(result.outlines)
+    # assert 'my_file_9_13.py:12: AssertionError' in '\n'.join(result.outlines)
+    assert result.outlines[-8:-3] == [
+        '',
+        '>   assert a + b == 4',
+        'E   AssertionError',
+        '',
+        'my_file.md:12: AssertionError',
+    ]
 
 
 def test_run_example_skip(pytester: pytest.Pytester):
@@ -146,14 +153,16 @@ def test_find_run_examples(example: CodeExample, run_example: EvalExample):
     result = pytester.runpytest('-p', 'no:pretty', '-v')
     result.assert_outcomes(failed=1)
 
-    e_lines = [line for line in result.outlines if line.startswith('E')]
+    failures_start = next(index for index, line in enumerate(result.outlines) if 'FAILURES' in line)
+    failures_end = next(index for index, line in enumerate(result.outlines) if 'short test summary' in line)
+    e_lines = [line.strip() for line in result.outlines[failures_start + 2 : failures_end]]
     assert e_lines == [
-        'E       Failed: black failed:',
-        'E       --- before',
-        'E       +++ after',
-        'E       @@ -4 +4 @@',
-        'E       -x =[1,2, 3]',
-        'E       +x = [1, 2, 3]',
+        'black failed:',
+        '--- before',
+        '+++ after',
+        '@@ -4 +4 @@',
+        '-x =[1,2, 3]',
+        '+x = [1, 2, 3]',
     ]
 
 
@@ -186,16 +195,18 @@ def test_find_run_examples(example: CodeExample, run_example: EvalExample):
     result = pytester.runpytest('-p', 'no:pretty', '-v')
     result.assert_outcomes(failed=1)
 
-    e_lines = [line.strip() for line in result.outlines if line.startswith('E')]
+    failures_start = next(index for index, line in enumerate(result.outlines) if 'FAILURES' in line)
+    failures_end = next(index for index, line in enumerate(result.outlines) if 'short test summary' in line)
+    e_lines = [line.strip() for line in result.outlines[failures_start + 2 : failures_end]]
     assert e_lines == [
-        'E       Failed: black failed:',
-        'E       --- before',
-        'E       +++ after',
-        'E       @@ -4,8 +4 @@',
-        'E       -x =[',
-        'E       -    1,',
-        'E       -    2,',
-        'E       -    3',
-        'E       -]',
-        'E       +x = [1, 2, 3]',
+        'black failed:',
+        '--- before',
+        '+++ after',
+        '@@ -4,8 +4 @@',
+        '-x =[',
+        '-    1,',
+        '-    2,',
+        '-    3',
+        '-]',
+        '+x = [1, 2, 3]',
     ]

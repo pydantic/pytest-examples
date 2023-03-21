@@ -23,4 +23,5 @@ from pytest_examples import find_examples, CodeExample, EvalExample
 @pytest.mark.parametrize('example', find_examples('foo_dir', 'bar_file.py'))
 def test_docstrings(example: CodeExample, run_example: EvalExample):
     run_example.run(example)
+    run_example.lint(example)
 ```

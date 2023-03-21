@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := all
-sources = pytest_examples tests
+sources = pytest_examples tests example
 
 .PHONY: install
 install:
@@ -31,8 +31,12 @@ lint:
 	ruff $(sources)
 	black $(sources) --check --diff
 
+.PHONY: test
+test:
+	pytest
+
 .PHONY: all
-all: lint
+all: lint test
 
 .PHONY: clean
 clean:

@@ -18,11 +18,11 @@ __all__ = 'ruff_check', 'black_check'
 def ruff_check(
     module_path: Path,
     tmp_path: Path,
+    offset: int,
     extra_ruff_args: tuple[str, ...],
     line_length: int | None,
     ruff_config: dict[str, Any] | None,
 ) -> None:
-    __tracebackhide__ = True
     args = 'ruff', 'check', str(module_path), *extra_ruff_args
 
     config_content = ''
@@ -39,9 +39,13 @@ def ruff_check(
         args += '--config', str(config_file)
 
     p = subprocess.run(args, capture_output=True, text=True)
-    if p.returncode == 1:
-        output = p.stdout.replace(str(tmp_path), '<path>') or p.stderr
-        pytest.fail(f'ruff failed:\n{output}')
+    if p.returncode == 1 and p.stdout:
+
+        def replace_offset(m: re.Match):
+            return f'<path>{m.group(1)}:{int(m.group(2)) + offset}'
+
+        output = re.sub(rf'^{re.escape(str(tmp_path))}(/.*?\.py):(\d+)', replace_offset, p.stdout, flags=re.M)
+        pytest.fail(f'ruff failed:\n{output}', pytrace=False)
     elif p.returncode != 0:
         raise RuntimeError(f'Error running ruff, return code {p.returncode}:\n{p.stderr or p.stdout}')
 
@@ -57,7 +61,7 @@ def black_check(example: CodeExample, line_length: int | None = None) -> None:
             return f'{match.group(1)}{offset}{match.group(3)}'
 
         diff = re.sub(r'^(@@\s*)(.*)(\s*@@)$', replace_at_line, diff, flags=re.M)
-        pytest.fail(f'black failed:\n{diff}')
+        pytest.fail(f'black failed:\n{diff}', pytrace=False)
 
 
 @lru_cache()
