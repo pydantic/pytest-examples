@@ -1,5 +1,6 @@
 from __future__ import annotations as _annotations
 
+import sys
 import traceback
 from types import CodeType, FrameType, TracebackType
 from typing import TYPE_CHECKING
@@ -16,6 +17,9 @@ def create_example_traceback(exc: Exception, module_path: str, example: CodeExam
 
     Frames outside the example are not included in the new traceback.
     """
+    if sys.version_info < (3, 8):
+        # f_code.co_posonlyargcount was added in 3.8
+        return None
     frames = []
     for frame, _ in traceback.walk_tb(exc.__traceback__):
         if frame.f_code.co_filename == module_path:

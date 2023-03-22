@@ -1,4 +1,5 @@
 import re
+import sys
 
 import pytest
 
@@ -13,6 +14,7 @@ def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
 """
 
 
+@pytest.mark.skipif(sys.version_info >= (3, 10), reason='traceback different on 3.7')
 def test_run_example_ok_fail(pytester: pytest.Pytester):
     pytester.makefile(
         '.md',
