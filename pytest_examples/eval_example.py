@@ -10,7 +10,7 @@ import pytest
 from _pytest.assertion.rewrite import AssertionRewritingHook
 
 from .insert_print import InsertPrintStatements
-from .lint import DEFAULT_LINE_LENGTH, black_check, ruff_check
+from .lint import DEFAULT_LINE_LENGTH, black_check, black_format, ruff_check, ruff_format
 from .traceback import create_example_traceback
 
 if TYPE_CHECKING:
@@ -141,6 +141,62 @@ class EvalExample:
         :param line_length: The line length to use when linting.
         """
         black_check(example, line_length)
+
+    def format(
+        self, example: CodeExample, *, ruff: bool = True, black: bool = True, line_length: int = DEFAULT_LINE_LENGTH
+    ) -> None:
+        """
+        Format the example.
+
+        :param example: The example to format.
+        :param ruff: If True, format the example using ruff.
+        :param black: If True, format the example using black.
+        :param line_length: The line length to use when formatting.
+        """
+        if ruff:
+            self.format_ruff(example, line_length=line_length)
+        if black:
+            self.format_black(example, line_length=line_length)
+
+    def format_ruff(
+        self,
+        example: CodeExample,
+        *,
+        extra_ruff_args: tuple[str, ...] = (),
+        line_length: int = DEFAULT_LINE_LENGTH,
+        config: dict[str, Any] | None = None,
+    ) -> None:
+        """
+        Format the example using ruff.
+
+        :param example: The example to lint.
+        :param extra_ruff_args: Extra arguments to pass to ruff.
+        :param line_length: The line length to use when linting.
+        :param config: key-value pairs to write to a .ruff.toml file in the directory of the example to configure ruff.
+        """
+        if not self.update_examples:
+            raise RuntimeError('Cannot update examples without --update-examples')
+
+        python_file = self._write_file(example)
+        new_content = ruff_format(example, python_file, extra_ruff_args, line_length, config)
+        if new_content != example.source:
+            example.source = new_content
+            self.to_update.append(example)
+
+    def format_black(self, example: CodeExample, *, line_length: int = DEFAULT_LINE_LENGTH) -> None:
+        """
+        Format the example using black.
+
+        :param example: The example to lint.
+        :param line_length: The line length to use when linting.
+        """
+        if not self.update_examples:
+            raise RuntimeError('Cannot update examples without --update-examples')
+
+        new_content = black_format(example.source, line_length)
+        if new_content != example.source:
+            example.source = new_content
+            self.to_update.append(example)
 
     def _write_file(self, example: CodeExample) -> Path:
         python_file = self.tmp_path / f'{example.module_name}.py'

@@ -6,7 +6,7 @@ from _pytest.outcomes import Failed
 from pytest_examples import CodeExample
 from pytest_examples.lint import ruff_check
 
-long_function = 'def this_is_a_very_long_function_name_to_cause_errors(the_argument):\n  pass'
+long_function = 'def this_is_a_very_long_function_name_to_cause_errors(the_argument): pass'
 
 
 def fake_example(code: str, start_line: int = 0) -> CodeExample:
@@ -36,7 +36,7 @@ def test_ruff_line_length(tmp_path: Path):
     with pytest.raises(Failed) as exc_info:
         ruff_check(example, p, line_length=40)
     assert str(exc_info.value) == (
-        'ruff failed:\n  real/file.py:5:41: E501 Line too long (68 > 40 characters)\n  Found 1 error.\n'
+        'ruff failed:\n  real/file.py:5:41: E501 Line too long (73 > 40 characters)\n  Found 1 error.\n'
     )
 
 

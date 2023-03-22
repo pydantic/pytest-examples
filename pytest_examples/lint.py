@@ -17,8 +17,20 @@ from black.output import diff as black_diff
 if TYPE_CHECKING:
     from .find_examples import CodeExample
 
-__all__ = 'ruff_check', 'black_check', 'black_format', 'code_diff', 'DEFAULT_LINE_LENGTH'
+__all__ = 'ruff_check', 'ruff_format', 'black_check', 'black_format', 'code_diff', 'DEFAULT_LINE_LENGTH'
 DEFAULT_LINE_LENGTH = 88
+
+
+def ruff_format(
+    example: CodeExample,
+    python_file: Path,
+    extra_ruff_args: tuple[str, ...] = (),
+    line_length: int = DEFAULT_LINE_LENGTH,
+    ruff_config: dict[str, Any] | None = None,
+) -> str:
+    args = ('--fix',) + extra_ruff_args
+    ruff_check(example, python_file, args, line_length, ruff_config)
+    return python_file.read_text()
 
 
 def ruff_check(
@@ -56,20 +68,19 @@ def ruff_check(
         raise RuntimeError(f'Error running ruff, return code {p.returncode}:\n{p.stderr or p.stdout}')
 
 
-def black_check(example: CodeExample, line_length: int = DEFAULT_LINE_LENGTH) -> None:
+def black_format(source: str, line_length: int = DEFAULT_LINE_LENGTH) -> str:
     # hack to avoid black complaining about our print output format
-    before_black = re.sub(r'^( *#)> ', r'\1 > ', example.source, flags=re.M)
-    after_black = black_format(before_black, line_length)
+    before_black = re.sub(r'^( *#)> ', r'\1 > ', source, flags=re.M)
+    after_black = black_format_str(before_black, mode=_load_black_mode(line_length))
     # then revert it back
-    after_black = re.sub(r'^( *#) > ', r'\1> ', after_black, flags=re.M)
+    return re.sub(r'^( *#) > ', r'\1> ', after_black, flags=re.M)
 
+
+def black_check(example: CodeExample, line_length: int = DEFAULT_LINE_LENGTH) -> None:
+    after_black = black_format(example.source, line_length)
     if example.source != after_black:
         diff = code_diff(example, after_black)
         pytest.fail(f'black failed:\n{indent(diff, "  ")}', pytrace=False)
-
-
-def black_format(source: str, line_length: int = DEFAULT_LINE_LENGTH) -> str:
-    return black_format_str(source, mode=_load_black_mode(line_length))
 
 
 def code_diff(example: CodeExample, after: str) -> str:
