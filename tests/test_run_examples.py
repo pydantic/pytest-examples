@@ -237,6 +237,7 @@ def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
     ]
 
 
+@pytest.mark.skipif(sys.version_info < (3, 8), reason='traceback different on 3.7')
 def test_run_directly(tmp_path, eval_example):
     # language=Python
     python_code = """\
