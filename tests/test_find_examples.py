@@ -1,5 +1,7 @@
 import pytest
 
+from pytest_examples import CodeExample, find_examples
+
 
 def test_find_md_example(pytester: pytest.Pytester):
     pytester.makefile(
@@ -30,6 +32,7 @@ import pytest
 @pytest.mark.parametrize('example', find_examples('.'))
 def test_find_examples(example):
     assert example.indent == 0
+    assert example.end_line == example.start_line + 4
         """
     )
 
@@ -145,3 +148,44 @@ def test_find_examples(example):
     result.assert_outcomes(errors=1)
 
     assert "Not a file or directory: 'missing.md'" in '\n'.join(result.outlines)
+
+
+def test_find_index_markdown(tmp_path):
+    # language=Markdown
+    code = """
+foobar
+
+```py title="a.py"
+a = 1
+b = 2
+assert a + b == 3
+```
+"""
+    (tmp_path / 'a.md').write_text(code)
+    examples = list(find_examples(str(tmp_path)))
+    assert len(examples) == 1
+    example: CodeExample = examples[0].values[0]
+    assert code[example.start_index : example.end_index] == ('a = 1\n' 'b = 2\n' 'assert a + b == 3\n')
+    assert example.source == ('a = 1\n' 'b = 2\n' 'assert a + b == 3\n')
+
+
+def test_find_index_python(tmp_path):
+    # language=Python
+    code = '''
+def func_a():
+    """
+    prefix.
+    ```py
+    a = 1
+    b = 2
+    assert a + b == 3
+    ```
+    """
+    pass
+'''
+    (tmp_path / 'a.py').write_text(code)
+    examples = list(find_examples(str(tmp_path)))
+    assert len(examples) == 1
+    example: CodeExample = examples[0].values[0]
+    assert code[example.start_index : example.end_index] == ('    a = 1\n' '    b = 2\n' '    assert a + b == 3\n')
+    assert example.source == ('a = 1\n' 'b = 2\n' 'assert a + b == 3\n')

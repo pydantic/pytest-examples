@@ -1,7 +1,16 @@
+from pathlib import Path
+
 import pytest
 from _pytest.outcomes import Failed
 
 from pytest_examples import CodeExample
+
+
+def fake_example(path: Path, code: str, start_line: int = 0) -> CodeExample:
+    return CodeExample(
+        path, start_line=start_line, end_index=0, start_index=0, end_line=0, prefix='', source=code, indent=0
+    )
+
 
 # separate list to hopefully make it easier to read
 unchanged_code: list = [
@@ -67,7 +76,7 @@ if True:
 def test_insert_print_check_unchanged(tmp_path, eval_example, python_code):
     # note this file is no written here as it's not required
     md_file = tmp_path / 'test.md'
-    example = CodeExample(md_file, 3, '', python_code)
+    example = fake_example(md_file, python_code)
     eval_example.run(example, insert_print_statements='check', line_length=30)
 
 
@@ -77,7 +86,7 @@ def test_insert_print_check_change(tmp_path, eval_example):
 
     # note this file is no written here as it's not required
     md_file = tmp_path / 'test.md'
-    example = CodeExample(md_file, 3, '', python_code)
+    example = fake_example(md_file, python_code, start_line=3)
 
     with pytest.raises(Failed) as exc_info:
         eval_example.run(example, insert_print_statements='check')

@@ -58,11 +58,16 @@ class InsertPrintStatements:
         if self.patch is not None:
             self.patch.stop()
 
-    def check_print_statements(self, example: CodeExample):
+    def check_print_statements(self, example: CodeExample) -> None:
         with_prints = self._insert_print_statements(example)
         if example.source != with_prints:
             diff = code_diff(example, with_prints)
             pytest.fail(f'Print output changed code:\n{indent(diff, "  ")}', pytrace=False)
+
+    def updated_print_statements(self, example: CodeExample) -> str | None:
+        with_prints = self._insert_print_statements(example)
+        if example.source != with_prints:
+            return with_prints
 
     def _insert_print_statements(self, example: CodeExample) -> str:
         assert self.print_func is not None, 'print statements not being inserted'

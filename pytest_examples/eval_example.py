@@ -1,6 +1,7 @@
 from __future__ import annotations as _annotations
 
 import importlib.util
+from operator import itemgetter
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -25,6 +26,7 @@ class EvalExample:
     def __init__(self, *, tmp_path: Path, pytest_config: pytest.Config):
         self.tmp_path = tmp_path
         self._pytest_config = pytest_config
+        self.to_update: list[CodeExample] = []
 
     @property
     def update_examples(self) -> bool:
@@ -89,6 +91,11 @@ class EvalExample:
 
         if insert_print_statements == 'check':
             insert_print.check_print_statements(example)
+        elif insert_print_statements == 'update':
+            new_code = insert_print.updated_print_statements(example)
+            if new_code:
+                example.source = new_code
+                self.to_update.append(example)
 
     def lint(
         self, example: CodeExample, *, ruff: bool = True, black: bool = True, line_length: int = DEFAULT_LINE_LENGTH
@@ -140,3 +147,26 @@ class EvalExample:
             # assume if it already exists, it's because it was previously written in this test
             python_file.write_text(example.source)
         return python_file
+
+
+def _update_examples(example_groups: list[list[CodeExample]]):
+    """
+    Internal use only, update examples in place.
+    """
+    # The same example shouldn't appear more than once
+    examples: set[str] = set()
+    for example_group in example_groups:
+        new_changes = {str(ex) for ex in example_group}
+        if new_changes & examples:
+            raise RuntimeError('Cannot update the same example in separate tests!')
+        examples |= new_changes
+
+    for example_group in example_groups:
+        # order by line number descending so the earlier change doesn't mess up line numbers for later changes
+        example_groups.sort(key=itemgetter('start_line'), reverse=True)
+        for example in example_group:
+            _apply_example_update(example)
+
+
+def _apply_example_update(example: CodeExample):
+    pass

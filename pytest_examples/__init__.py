@@ -21,9 +21,24 @@ def pytest_addoption(parser):
     )
 
 
+@pytest.fixture(scope='session')
+def _examples_to_update(pytestconfig: pytest.Config) -> EvalExample:
+    """
+    Don't use this directly, it's just  used by
+    """
+    update_groups: list[list[CodeExample]] = []
+    yield update_groups
+    if pytestconfig.getoption('update_examples'):
+        from .eval_example import _update_examples
+
+        _update_examples(update_groups)
+
+
 @pytest.fixture(name='eval_example')
-def eval_example(tmp_path: Path, pytestconfig: pytest.Config) -> EvalExample:
+def eval_example(tmp_path: Path, pytestconfig: pytest.Config, _examples_to_update) -> EvalExample:
     """
     Fixture to return a `EvalExample` instance for running and linting examples.
     """
-    return EvalExample(tmp_path=tmp_path, pytest_config=pytestconfig)
+    eval_ex = EvalExample(tmp_path=tmp_path, pytest_config=pytestconfig)
+    yield eval_ex
+    _examples_to_update.append(eval_ex.to_update)
