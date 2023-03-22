@@ -21,7 +21,9 @@ class CodeExample:
     prefix: str
     """The prefix of the code block, e.g. `py`, can also contain `test="skip"`."""
     source: str
-    """The source code of the example."""
+    """The source code of the example, this is has any indent removed."""
+    indent: int = 0
+    """The indentation of the example, number of spaces."""
 
     @property
     def module_name(self) -> str:
@@ -45,15 +47,6 @@ class CodeExample:
         return f'{path}:{self.start_line}-{self.end_line}'
 
 
-def _extract_code_chunks(path: Path, text: str, offset: int):
-    for m_code in re.finditer(r'^```(.*?)$\n(.*?)^```', text, flags=re.M | re.S):
-        prefix = m_code.group(1).lower()
-        if prefix.startswith(('py', '{.py')):
-            start_line = offset + text[: m_code.start()].count('\n') + 1
-            example = CodeExample(path, start_line, prefix, m_code.group(2))
-            yield pytest.param(example, id=str(example))
-
-
 def find_examples(*directories: str):
     """
     Find Python code examples in markdown files and python file docstrings.
@@ -74,8 +67,28 @@ def find_examples(*directories: str):
                 code = path.read_text()
                 for m_docstring in re.finditer(r'(^\s*)r?"""$(.*?)\1"""', code, flags=re.M | re.S):
                     start_line = code[: m_docstring.start()].count('\n')
-                    docstring = dedent(m_docstring.group(2))
-                    yield from _extract_code_chunks(path, docstring, start_line)
+                    docstring = m_docstring.group(2)
+                    docstring, indent = remove_indent(docstring)
+                    yield from _extract_code_chunks(path, docstring, start_line, indent)
             elif path.suffix == '.md':
                 code = path.read_text()
                 yield from _extract_code_chunks(path, code, 0)
+
+
+def _extract_code_chunks(path: Path, text: str, offset: int, indent: int = 0):
+    for m_code in re.finditer(r'^```(.*?)$\n(.*?)^```', text, flags=re.M | re.S):
+        prefix = m_code.group(1).lower()
+        if prefix.startswith(('py', '{.py')):
+            start_line = offset + text[: m_code.start()].count('\n') + 1
+            example = CodeExample(path, start_line, prefix, m_code.group(2), indent)
+            yield pytest.param(example, id=str(example))
+
+
+def remove_indent(text: str) -> tuple[str, int]:
+    """
+    Remove the given indent from each line of text, return the dedented text and the indent.
+    """
+    first_line_before = text[: text.strip('\n').find('\n')]
+    text = dedent(text)
+    first_line_after = text[: text.strip('\n').find('\n')]
+    return text, len(first_line_before) - len(first_line_after)

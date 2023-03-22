@@ -2,7 +2,7 @@ from __future__ import annotations as _annotations
 
 import importlib.util
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import pytest
 from _pytest.assertion.rewrite import AssertionRewritingHook
@@ -26,11 +26,14 @@ class EvalExample:
         self.tmp_path = tmp_path
         self._pytest_config = pytest_config
 
+    @property
+    def update_examples(self) -> bool:
+        return self._pytest_config.getoption('update_examples')
+
     def run(
         self,
         example: CodeExample,
-        *,
-        insert_print_statements: bool = False,
+        insert_print_statements: Literal['check', 'update', None] = None,
         line_length: int = DEFAULT_LINE_LENGTH,
         rewrite_assertions: bool = True,
     ) -> None:
@@ -38,7 +41,9 @@ class EvalExample:
         Run the example.
 
         :param example: The example to run.
-        :param insert_print_statements: If True, insert print statements into the example.
+        :param insert_print_statements: `'check'` means check print statement comments match expected format,
+            `'update'` means update print statement comments to match expected format,
+            `None` means don't mock `print()`.
         :param line_length: The line length to use when wrapping print statements.
         :param rewrite_assertions: If True, rewrite assertions in the example using pytest's assertion rewriting.
         """
@@ -56,11 +61,22 @@ class EvalExample:
         spec = importlib.util.spec_from_file_location('__main__', str(python_file), loader=loader)
         module = importlib.util.module_from_spec(spec)
 
+        if insert_print_statements == 'check':
+            enable_print_mock = True
+        elif insert_print_statements == 'update':
+            if not self.update_examples:
+                raise RuntimeError('Cannot update examples without --update-examples')
+            enable_print_mock = True
+        elif insert_print_statements is None:
+            enable_print_mock = False
+        else:
+            raise ValueError(f'Invalid value for insert_print_statements: {insert_print_statements}')
+
         # does nothing if insert_print_statements is False
-        mock_print = InsertPrintStatements(python_file, line_length, insert_print_statements)
+        insert_print = InsertPrintStatements(python_file, line_length, enable_print_mock)
 
         try:
-            with mock_print:
+            with insert_print:
                 spec.loader.exec_module(module)
         except KeyboardInterrupt:
             print(f'KeyboardInterrupt in example {self}')
@@ -71,8 +87,8 @@ class EvalExample:
             else:
                 raise exc
 
-        if insert_print_statements:
-            mock_print.check_print_statements(example)
+        if insert_print_statements == 'check':
+            insert_print.check_print_statements(example)
 
     def lint(
         self, example: CodeExample, *, ruff: bool = True, black: bool = True, line_length: int = DEFAULT_LINE_LENGTH

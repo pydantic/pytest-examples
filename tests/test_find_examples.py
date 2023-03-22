@@ -29,7 +29,7 @@ import pytest
 
 @pytest.mark.parametrize('example', find_examples('.'))
 def test_find_examples(example):
-    pass
+    assert example.indent == 0
         """
     )
 
@@ -82,11 +82,11 @@ import pytest
 
 @pytest.mark.parametrize('example', find_examples('.'))
 def test_find_examples(example):
-    pass
+    assert example.indent == 4
         """
     )
 
-    result = pytester.runpytest('-p', 'no:pretty', '-v')
+    result = pytester.runpytest('-p', 'no:pretty', '-vs')
     result.assert_outcomes(passed=3)
 
     output = '\n'.join(result.outlines)

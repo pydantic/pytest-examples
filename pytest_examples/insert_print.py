@@ -43,10 +43,10 @@ class MockPrintFunction:
 
 
 class InsertPrintStatements:
-    def __init__(self, python_path: Path, line_length: int, insert_print_statements: bool):
+    def __init__(self, python_path: Path, line_length: int, enable: bool):
         self.file = python_path
         self.line_length = line_length
-        self.print_func = MockPrintFunction(python_path) if insert_print_statements else None
+        self.print_func = MockPrintFunction(python_path) if enable else None
         self.patch = None
 
     def __enter__(self) -> None:

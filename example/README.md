@@ -3,7 +3,7 @@
 ```py
 x = 123
 print('this is an example of how pytest-examples is used', x, [1, 2, 3])
-#> this is an example of how pytest-examples is used 123 [1, 2, 3])
+#> this is an example of how pytest-examples is used 123 [1, 2, 3]
 
 # something more complex
 if True:

@@ -12,9 +12,12 @@ __all__ = 'find_examples', 'CodeExample', 'EvalExample'
 def pytest_addoption(parser):
     group = parser.getgroup('examples')
     group.addoption(
-        '--update-example-prints',
+        '--update-examples',
         action='store_true',
-        help='update examples to reflect print output',
+        help=(
+            '[WARNING: this will allow files to be changed in place!] '
+            'Update code examples to reflect print output and linting.'
+        ),
     )
 
 
