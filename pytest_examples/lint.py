@@ -9,21 +9,26 @@ from textwrap import indent
 from typing import TYPE_CHECKING, Any, Callable
 
 import pytest
+from black import format_str as black_format_str
+from black.files import find_pyproject_toml, parse_pyproject_toml
+from black.mode import Mode, TargetVersion
+from black.output import diff as black_diff
 
 if TYPE_CHECKING:
     from .find_examples import CodeExample
 
-__all__ = 'ruff_check', 'black_check'
+__all__ = 'ruff_check', 'black_check', 'black_format', 'code_diff', 'DEFAULT_LINE_LENGTH'
+DEFAULT_LINE_LENGTH = 88
 
 
 def ruff_check(
     example: CodeExample,
-    file_path: Path,
+    python_file: Path,
     extra_ruff_args: tuple[str, ...] = (),
-    line_length: int | None = None,
+    line_length: int = DEFAULT_LINE_LENGTH,
     ruff_config: dict[str, Any] | None = None,
 ) -> None:
-    args = 'ruff', 'check', str(file_path), *extra_ruff_args
+    args = 'ruff', 'check', str(python_file), *extra_ruff_args
 
     config_content = ''
     if line_length is not None:
@@ -34,7 +39,7 @@ def ruff_check(
     if config_content:
         if '--config' in args:
             raise RuntimeError("Custom `--config` can't be combined with `line_length` or `ruff_config` arguments")
-        config_file = file_path.parent / 'ruff.toml'
+        config_file = python_file.parent / 'ruff.toml'
         config_file.write_text(config_content)
         args += '--config', str(config_file)
 
@@ -45,39 +50,44 @@ def ruff_check(
             line_number = int(m.group(1))
             return f'{example.path}:{line_number + example.start_line}'
 
-        output = re.sub(rf'^{re.escape(str(file_path))}:(\d+)', replace_offset, p.stdout, flags=re.M)
+        output = re.sub(rf'^{re.escape(str(python_file))}:(\d+)', replace_offset, p.stdout, flags=re.M)
         pytest.fail(f'ruff failed:\n{indent(output, "  ")}', pytrace=False)
     elif p.returncode != 0:
         raise RuntimeError(f'Error running ruff, return code {p.returncode}:\n{p.stderr or p.stdout}')
 
 
-def black_check(example: CodeExample, line_length: int | None = None) -> None:
-    __tracebackhide__ = True
-    format_code = load_black(line_length)
-    diff, _ = format_code(example.source, True)
-    if diff:
+def black_check(example: CodeExample, line_length: int = DEFAULT_LINE_LENGTH) -> None:
+    # hack to avoid black complaining about our print output format
+    before_black = re.sub(r'^( *#)> ', r'\1 > ', example.source, flags=re.M)
+    after_black = black_format(before_black, line_length)
+    # then revert it back
+    after_black = re.sub(r'^( *#) > ', r'\1> ', after_black, flags=re.M)
 
-        def replace_at_line(match: re.Match) -> str:
-            offset = re.sub(r'\d+', lambda m: str(int(m.group(0)) + example.start_line), match.group(2))
-            return f'{match.group(1)}{offset}{match.group(3)}'
-
-        diff = re.sub(r'^(@@\s*)(.*)(\s*@@)$', replace_at_line, diff, flags=re.M)
+    if example.source != after_black:
+        diff = code_diff(example, after_black)
         pytest.fail(f'black failed:\n{indent(diff, "  ")}', pytrace=False)
 
 
+def black_format(source: str, line_length: int = DEFAULT_LINE_LENGTH) -> str:
+    return black_format_str(source, mode=_load_black_mode(line_length))
+
+
+def code_diff(example: CodeExample, after: str) -> str:
+    diff = black_diff(example.source, after, 'before', 'after')
+
+    def replace_at_line(match: re.Match) -> str:
+        offset = re.sub(r'\d+', lambda m: str(int(m.group(0)) + example.start_line), match.group(2))
+        return f'{match.group(1)}{offset}{match.group(3)}'
+
+    return re.sub(r'^(@@\s*)(.*)(\s*@@)$', replace_at_line, diff, flags=re.M)
+
+
 @lru_cache()
-def load_black(line_length: int | None) -> Callable[[str, bool], tuple[str | None, str]]:  # noqa: C901
+def _load_black_mode(line_length: int) -> Mode:
     """
     Build black configuration from "pyproject.toml".
     Black doesn't have a nice self-contained API for reading pyproject.toml, hence all this.
     """
-    try:
-        from black import format_str
-        from black.files import find_pyproject_toml, parse_pyproject_toml
-        from black.mode import Mode, TargetVersion
-        from black.output import diff
-    except ImportError:
-        pytest.fail('black is not installed, cannot run black tests')
 
     def convert_target_version(target_version_config: Any) -> set[Any] | None:
         if target_version_config is not None:
@@ -125,12 +135,4 @@ def load_black(line_length: int | None) -> Callable[[str, bool], tuple[str | Non
 
             mode_ = Mode(**kwargs)
 
-    mode = mode_ or Mode()
-
-    def format_code(code: str, check: bool) -> tuple[str | None, str]:
-        dst = format_str(code, mode=mode)
-        if check and dst != code:
-            return diff(code, dst, 'before', 'after'), dst
-        return None, dst
-
-    return format_code
+    return mode_ or Mode()

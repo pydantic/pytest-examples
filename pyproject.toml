@@ -46,6 +46,7 @@ requires-python = '>=3.7'
 dynamic = ['version']
 dependencies = [
     'pytest>=7',
+    'black>=23',
 ]
 
 [project.entry-points.pytest11]
