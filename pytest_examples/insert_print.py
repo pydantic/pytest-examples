@@ -79,7 +79,7 @@ class InsertPrintStatements:
     def _insert_print_args(self, lines: list[str], statement: PrintStatement, indent_str: str) -> None:
         single_line = statement.sep.join(statement.args)
         if len(single_line) < self.line_length - len(indent_str) - len(comment_prefix):
-            lines.insert(statement.line_no + 1, f'{indent_str}{comment_prefix}{single_line})')
+            lines.insert(statement.line_no + 1, f'{indent_str}{comment_prefix}{single_line}')
         else:
             # if the statement is too long to go on one line, print each arg on its own line formatted with black
             sep = f'{statement.sep}\n'

@@ -23,7 +23,7 @@ def test_ruff_line_length(tmp_path: Path):
     with pytest.raises(Failed) as exc_info:
         ruff_check(example, p, line_length=40)
     assert str(exc_info.value) == (
-        'ruff failed:\n' '  real/file.py:5:41: E501 Line too long (68 > 40 characters)\n' '  Found 1 error.\n'
+        'ruff failed:\n  real/file.py:5:41: E501 Line too long (68 > 40 characters)\n  Found 1 error.\n'
     )
 
 
