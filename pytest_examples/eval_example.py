@@ -7,7 +7,8 @@ from typing import TYPE_CHECKING, Any
 import pytest
 from _pytest.assertion.rewrite import AssertionRewritingHook
 
-from .lint import black_check, ruff_check
+from .insert_print import InsertPrintStatements
+from .lint import DEFAULT_LINE_LENGTH, black_check, ruff_check
 from .traceback import create_example_traceback
 
 if TYPE_CHECKING:
@@ -21,7 +22,14 @@ class EvalExample:
         self.tmp_path = tmp_path
         self._pytest_config = pytest_config
 
-    def run(self, example: CodeExample, *, rewrite_assertions: bool = True):
+    def run(
+        self,
+        example: CodeExample,
+        *,
+        insert_print_statements: bool = False,
+        line_length: int = DEFAULT_LINE_LENGTH,
+        rewrite_assertions: bool = True,
+    ):
         __tracebackhide__ = True
         if 'test="skip"' in example.prefix:
             pytest.skip('test="skip" on code snippet, skipping')
@@ -32,22 +40,30 @@ class EvalExample:
         else:
             loader = None
 
-        module_path = self._write_file(example)
-        spec = importlib.util.spec_from_file_location('__main__', str(module_path), loader=loader)
+        python_file = self._write_file(example)
+        spec = importlib.util.spec_from_file_location('__main__', str(python_file), loader=loader)
         module = importlib.util.module_from_spec(spec)
+
+        # does nothing if insert_print_statements is False
+        mock_print = InsertPrintStatements(python_file, line_length, insert_print_statements)
+
         try:
-            spec.loader.exec_module(module)
+            with mock_print:
+                spec.loader.exec_module(module)
         except KeyboardInterrupt:
             print(f'KeyboardInterrupt in example {self}')
         except Exception as exc:
-            example_tb = create_example_traceback(exc, str(module_path), example)
+            example_tb = create_example_traceback(exc, str(python_file), example)
             if example_tb:
                 raise exc.with_traceback(example_tb)
             else:
                 raise exc
 
+        if insert_print_statements:
+            mock_print.check_print_statements(example)
+
     def lint(
-        self, example: CodeExample, *, ruff: bool = True, black: bool = True, line_length: int | None = None
+        self, example: CodeExample, *, ruff: bool = True, black: bool = True, line_length: int = DEFAULT_LINE_LENGTH
     ) -> None:
         if ruff:
             self.lint_ruff(example, line_length=line_length)
@@ -59,20 +75,20 @@ class EvalExample:
         example: CodeExample,
         *,
         extra_ruff_args: tuple[str, ...] = (),
-        line_length: int | None = None,
+        line_length: int = DEFAULT_LINE_LENGTH,
         config: dict[str, Any] | None = None,
     ) -> None:
         __tracebackhide__ = True
-        module_path = self._write_file(example)
-        ruff_check(example, module_path, extra_ruff_args, line_length, config)
+        python_file = self._write_file(example)
+        ruff_check(example, python_file, extra_ruff_args, line_length, config)
 
-    def lint_black(self, example: CodeExample, *, line_length: int | None = None) -> None:
+    def lint_black(self, example: CodeExample, *, line_length: int = DEFAULT_LINE_LENGTH) -> None:
         __tracebackhide__ = True
         black_check(example, line_length)
 
     def _write_file(self, example: CodeExample) -> Path:
-        module_path = self.tmp_path / f'{example.module_name}.py'
-        if not module_path.exists():
+        python_file = self.tmp_path / f'{example.module_name}.py'
+        if not python_file.exists():
             # assume if it already exists, it's because it was previously written in this test
-            module_path.write_text(example.source)
-        return module_path
+            python_file.write_text(example.source)
+        return python_file
