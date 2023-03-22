@@ -14,10 +14,10 @@ def test_will_error(example: CodeExample, eval_example: EvalExample):
 def test_insert_print(example: CodeExample, eval_example: EvalExample):
     if eval_example.update_examples:
         eval_example.format(example)
-        eval_example.run(example, insert_print_statements='update')
+        eval_example.run_print_update(example)
     else:
         eval_example.lint(example)
-        eval_example.run(example, insert_print_statements='check')
+        eval_example.run_print_check(example)
 
 
 @pytest.mark.parametrize('example', find_examples('example/test_example.py'))
@@ -30,4 +30,4 @@ def test_python_self(example: CodeExample, eval_example: EvalExample):
     ```
     """
     eval_example.lint(example)
-    eval_example.run(example, insert_print_statements='check')
+    eval_example.run_print_check(example)

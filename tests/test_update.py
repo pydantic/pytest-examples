@@ -45,7 +45,7 @@ import pytest
 def test_find_examples(example: CodeExample, eval_example: EvalExample):
     if eval_example.update_examples:
         eval_example.lint(example)
-        eval_example.run(example, insert_print_statements='update')
+        eval_example.run_print_update(example)
     else:
         eval_example.lint(example)
         # insert_print_statements='check' would fail here
@@ -114,12 +114,12 @@ import pytest
 @pytest.mark.parametrize('example', find_examples('.'))
 def test_a(example: CodeExample, eval_example: EvalExample):
     if eval_example.update_examples:
-        eval_example.run(example, insert_print_statements='update')
+        eval_example.run_print_update(example)
 
 @pytest.mark.parametrize('example', find_examples('.'))
 def test_b(example: CodeExample, eval_example: EvalExample):
     if eval_example.update_examples:
-        eval_example.run(example, insert_print_statements='update')
+        eval_example.run_print_update(example)
 ################################# end of test code #################################
         """
     )
@@ -154,12 +154,12 @@ import pytest
 @pytest.mark.parametrize('example', find_examples('.'))
 def test_a(example: CodeExample, eval_example: EvalExample):
     if 'example 1' in example.source:
-        eval_example.run(example, insert_print_statements='update')
+        eval_example.run_print_update(example)
 
 @pytest.mark.parametrize('example', find_examples('.'))
 def test_b(example: CodeExample, eval_example: EvalExample):
     if 'example 2' in example.source:
-        eval_example.run(example, insert_print_statements='update')
+        eval_example.run_print_update(example)
 ################################# end of test code #################################
         """
     )

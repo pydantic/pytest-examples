@@ -36,20 +36,66 @@ class EvalExample:
     def run(
         self,
         example: CodeExample,
-        insert_print_statements: Literal['check', 'update', None] = None,
         line_length: int = DEFAULT_LINE_LENGTH,
         rewrite_assertions: bool = True,
     ) -> None:
         """
-        Run the example.
+        Run the example, print is not mocked and print statements are not checked.
 
         :param example: The example to run.
-        :param insert_print_statements: `'check'` means check print statement comments match expected format,
-            `'update'` means update print statement comments to match expected format,
-            `None` means don't mock `print()`.
         :param line_length: The line length to use when wrapping print statements.
         :param rewrite_assertions: If True, rewrite assertions in the example using pytest's assertion rewriting.
         """
+        __tracebackhide__ = True
+        self._run(example, None, line_length, rewrite_assertions)
+
+    def run_print_check(
+        self,
+        example: CodeExample,
+        line_length: int = DEFAULT_LINE_LENGTH,
+        rewrite_assertions: bool = True,
+    ) -> None:
+        """
+        Run the example and check print statements.
+
+        :param example: The example to run.
+        :param line_length: The line length to use when wrapping print statements.
+        :param rewrite_assertions: If True, rewrite assertions in the example using pytest's assertion rewriting.
+        """
+        __tracebackhide__ = True
+        insert_print = self._run(example, 'check', line_length, rewrite_assertions)
+        insert_print.check_print_statements(example)
+
+    def run_print_update(
+        self,
+        example: CodeExample,
+        line_length: int = DEFAULT_LINE_LENGTH,
+        rewrite_assertions: bool = True,
+    ) -> None:
+        """
+        Run the example and update print statements, requires `--update-examples`.
+
+        :param example: The example to run.
+        :param line_length: The line length to use when wrapping print statements.
+        :param rewrite_assertions: If True, rewrite assertions in the example using pytest's assertion rewriting.
+        """
+        __tracebackhide__ = True
+        if not self.update_examples:
+            raise RuntimeError('Cannot update examples without --update-examples')
+        insert_print = self._run(example, 'update', line_length, rewrite_assertions)
+
+        new_code = insert_print.updated_print_statements(example)
+        if new_code:
+            example.source = new_code
+            self.to_update.append(example)
+
+    def _run(
+        self,
+        example: CodeExample,
+        insert_print_statements: Literal['check', 'update', None],
+        line_length: int,
+        rewrite_assertions: bool,
+    ) -> InsertPrintStatements:
         __tracebackhide__ = True
         if 'test="skip"' in example.prefix:
             pytest.skip('test="skip" on code snippet, skipping')
@@ -67,13 +113,9 @@ class EvalExample:
         if insert_print_statements == 'check':
             enable_print_mock = True
         elif insert_print_statements == 'update':
-            if not self.update_examples:
-                raise RuntimeError('Cannot update examples without --update-examples')
             enable_print_mock = True
-        elif insert_print_statements is None:
-            enable_print_mock = False
         else:
-            raise ValueError(f'Invalid value for insert_print_statements: {insert_print_statements}')
+            enable_print_mock = False
 
         # does nothing if insert_print_statements is False
         insert_print = InsertPrintStatements(python_file, line_length, enable_print_mock)
@@ -90,13 +132,7 @@ class EvalExample:
             else:
                 raise exc
 
-        if insert_print_statements == 'check':
-            insert_print.check_print_statements(example)
-        elif insert_print_statements == 'update':
-            new_code = insert_print.updated_print_statements(example)
-            if new_code:
-                example.source = new_code
-                self.to_update.append(example)
+        return insert_print
 
     def lint(
         self, example: CodeExample, *, ruff: bool = True, black: bool = True, line_length: int = DEFAULT_LINE_LENGTH
@@ -146,7 +182,7 @@ class EvalExample:
         self, example: CodeExample, *, ruff: bool = True, black: bool = True, line_length: int = DEFAULT_LINE_LENGTH
     ) -> None:
         """
-        Format the example.
+        Format the example, requires `--update-examples`.
 
         :param example: The example to format.
         :param ruff: If True, format the example using ruff.
@@ -167,7 +203,7 @@ class EvalExample:
         config: dict[str, Any] | None = None,
     ) -> None:
         """
-        Format the example using ruff.
+        Format the example using ruff, requires `--update-examples`.
 
         :param example: The example to lint.
         :param extra_ruff_args: Extra arguments to pass to ruff.
@@ -185,7 +221,7 @@ class EvalExample:
 
     def format_black(self, example: CodeExample, *, line_length: int = DEFAULT_LINE_LENGTH) -> None:
         """
-        Format the example using black.
+        Format the example using black, requires `--update-examples`.
 
         :param example: The example to lint.
         :param line_length: The line length to use when linting.

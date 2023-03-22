@@ -77,7 +77,7 @@ def test_insert_print_check_unchanged(tmp_path, eval_example, python_code):
     # note this file is no written here as it's not required
     md_file = tmp_path / 'test.md'
     example = fake_example(md_file, python_code)
-    eval_example.run(example, insert_print_statements='check', line_length=30)
+    eval_example.run_print_check(example, line_length=30)
 
 
 def test_insert_print_check_change(tmp_path, eval_example):
@@ -89,7 +89,7 @@ def test_insert_print_check_change(tmp_path, eval_example):
     example = fake_example(md_file, python_code, start_line=3)
 
     with pytest.raises(Failed) as exc_info:
-        eval_example.run(example, insert_print_statements='check')
+        eval_example.run_print_check(example)
     assert str(exc_info.value) == (
         'Print output changed code:\n'
         '  --- before\n'
