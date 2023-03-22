@@ -23,3 +23,15 @@ if True:
     }
     """
 ```
+
+# Another example
+
+```py
+print('this is another example')
+```
+
+# And another
+
+```py
+print(b'hello world')
+```

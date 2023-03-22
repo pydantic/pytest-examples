@@ -1,8 +1,9 @@
 from __future__ import annotations as _annotations
 
 import importlib.util
-from operator import itemgetter
+from itertools import groupby
 from pathlib import Path
+from textwrap import indent
 from typing import TYPE_CHECKING, Any, Literal
 
 import pytest
@@ -149,24 +150,36 @@ class EvalExample:
         return python_file
 
 
-def _update_examples(example_groups: list[list[CodeExample]]):
+def _update_examples(examples: list[CodeExample]):
     """
     Internal use only, update examples in place.
     """
     # The same example shouldn't appear more than once
-    examples: set[str] = set()
-    for example_group in example_groups:
-        new_changes = {str(ex) for ex in example_group}
-        if new_changes & examples:
+    unique_examples: set[str] = set()
+    for ex in examples:
+        s = str(ex)
+        if s in unique_examples:
             raise RuntimeError('Cannot update the same example in separate tests!')
-        examples |= new_changes
+        unique_examples.add(s)
 
-    for example_group in example_groups:
-        # order by line number descending so the earlier change doesn't mess up line numbers for later changes
-        example_groups.sort(key=itemgetter('start_line'), reverse=True)
-        for example in example_group:
-            _apply_example_update(example)
+    # same file should appear on more than one group
+    files: set[Path] = set()
+    # order by line number descending so the earlier change doesn't mess up line numbers for later changes
+    examples.sort(key=lambda x: (x.group, x.start_line), reverse=True)
 
+    for _, g in groupby(examples, key=lambda x: x.group):
+        new_files = {ex.path for ex in g}
+        if new_files & files:
+            raise RuntimeError('Cannot update the same file in separate tests!')
+        files |= new_files
 
-def _apply_example_update(example: CodeExample):
-    pass
+    for path, g in groupby(examples, key=lambda ex: ex.path):
+        content = path.read_text()
+        for ex in g:
+            example: CodeExample = ex
+            new_source = example.source
+            if example.indent:
+                new_source = indent(new_source, ' ' * example.indent)
+            content = content[: example.start_index] + new_source + content[example.end_index :]
+
+        path.write_text(content)

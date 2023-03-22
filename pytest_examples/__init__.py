@@ -22,16 +22,16 @@ def pytest_addoption(parser):
 
 
 @pytest.fixture(scope='session')
-def _examples_to_update(pytestconfig: pytest.Config) -> EvalExample:
+def _examples_to_update(pytestconfig: pytest.Config) -> list[CodeExample]:
     """
     Don't use this directly, it's just  used by
     """
-    update_groups: list[list[CodeExample]] = []
-    yield update_groups
+    examples_to_update: list[CodeExample] = []
+    yield examples_to_update
     if pytestconfig.getoption('update_examples'):
         from .eval_example import _update_examples
 
-        _update_examples(update_groups)
+        _update_examples(examples_to_update)
 
 
 @pytest.fixture(name='eval_example')
@@ -41,4 +41,4 @@ def eval_example(tmp_path: Path, pytestconfig: pytest.Config, _examples_to_updat
     """
     eval_ex = EvalExample(tmp_path=tmp_path, pytest_config=pytestconfig)
     yield eval_ex
-    _examples_to_update.append(eval_ex.to_update)
+    _examples_to_update.extend(eval_ex.to_update)

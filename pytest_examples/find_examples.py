@@ -2,6 +2,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 from textwrap import dedent
+from uuid import UUID, uuid4
 
 import pytest
 
@@ -30,9 +31,8 @@ class CodeExample:
     """The source code of the example, this is has any indent removed."""
     indent: int
     """The indentation of the example, number of spaces."""
-
-    # def __post_init__(self):
-    #     self.end_line = self.start_line + self.source.count('\n') + 1
+    group: UUID | None = None
+    """A unique identifier for the example group."""
 
     @property
     def module_name(self) -> str:
@@ -65,19 +65,22 @@ def find_examples(*directories: str):
             raise ValueError(f'Not a file or directory: {d!r}')
 
         for path in paths:
+            group = uuid4()
             if path.suffix == '.py':
                 code = path.read_text()
                 for m_docstring in re.finditer(r'(^ *)(r?"""\n)(.+?)\1"""', code, flags=re.M | re.S):
                     start_line = code[: m_docstring.start()].count('\n') + 1
                     docstring = m_docstring.group(3)
                     index_offset = m_docstring.start() + len(m_docstring.group(1)) + len(m_docstring.group(2))
-                    yield from _extract_code_chunks(path, docstring, line_offset=start_line, index_offset=index_offset)
+                    yield from _extract_code_chunks(
+                        path, docstring, group, line_offset=start_line, index_offset=index_offset
+                    )
             elif path.suffix == '.md':
                 code = path.read_text()
-                yield from _extract_code_chunks(path, code)
+                yield from _extract_code_chunks(path, code, group)
 
 
-def _extract_code_chunks(path: Path, text: str, *, line_offset: int = 0, index_offset: int = 0):
+def _extract_code_chunks(path: Path, text: str, group: UUID, *, line_offset: int = 0, index_offset: int = 0):
     for m_code in re.finditer(r'(^ *)```(.*?)$\n(.+?)\1```', text, flags=re.M | re.S):
         prefix = m_code.group(2).lower()
         if prefix.startswith(('py', '{.py')):
@@ -95,6 +98,7 @@ def _extract_code_chunks(path: Path, text: str, *, line_offset: int = 0, index_o
                 prefix,
                 source_dedent,
                 indent,
+                group,
             )
             yield pytest.param(example, id=str(example))
 
