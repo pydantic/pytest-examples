@@ -19,5 +19,8 @@ def pytest_addoption(parser):
 
 
 @pytest.fixture(name='eval_example')
-def eval_example(tmp_path: Path, pytestconfig: pytest.Config):
+def eval_example(tmp_path: Path, pytestconfig: pytest.Config) -> EvalExample:
+    """
+    Fixture to return a `EvalExample` instance for running and linting examples.
+    """
     return EvalExample(tmp_path=tmp_path, pytest_config=pytestconfig)

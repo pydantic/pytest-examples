@@ -10,17 +10,31 @@ __all__ = 'CodeExample', 'find_examples'
 
 @dataclasses.dataclass
 class CodeExample:
+    """
+    Information about a Python code example.
+    """
+
     path: Path
+    """The path to the file containing the example."""
     start_line: int
+    """The line number of the first line of the example."""
     prefix: str
+    """The prefix of the code block, e.g. `py`, can also contain `test="skip"`."""
     source: str
+    """The source code of the example."""
 
     @property
-    def module_name(self):
+    def module_name(self) -> str:
+        """
+        A suitable Python module name for testing the example.
+        """
         return f'{self.path.stem}_{self.start_line}_{self.end_line}'
 
     @property
-    def end_line(self):
+    def end_line(self) -> int:
+        """
+        The line number of the last line of the example.
+        """
         return self.start_line + self.source.count('\n') + 1
 
     def __str__(self):
@@ -41,6 +55,11 @@ def _extract_code_chunks(path: Path, text: str, offset: int):
 
 
 def find_examples(*directories: str):
+    """
+    Find Python code examples in markdown files and python file docstrings.
+
+    Yields `CodeExample` objects wrapped in a `pytest.param` object.
+    """
     for d in directories:
         dir_path = Path(d)
         if dir_path.is_file():

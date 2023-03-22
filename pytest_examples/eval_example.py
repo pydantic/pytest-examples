@@ -18,6 +18,10 @@ __all__ = ('EvalExample',)
 
 
 class EvalExample:
+    """
+    Class to run and lint examples.
+    """
+
     def __init__(self, *, tmp_path: Path, pytest_config: pytest.Config):
         self.tmp_path = tmp_path
         self._pytest_config = pytest_config
@@ -29,7 +33,15 @@ class EvalExample:
         insert_print_statements: bool = False,
         line_length: int = DEFAULT_LINE_LENGTH,
         rewrite_assertions: bool = True,
-    ):
+    ) -> None:
+        """
+        Run the example.
+
+        :param example: The example to run.
+        :param insert_print_statements: If True, insert print statements into the example.
+        :param line_length: The line length to use when wrapping print statements.
+        :param rewrite_assertions: If True, rewrite assertions in the example using pytest's assertion rewriting.
+        """
         __tracebackhide__ = True
         if 'test="skip"' in example.prefix:
             pytest.skip('test="skip" on code snippet, skipping')
@@ -65,6 +77,14 @@ class EvalExample:
     def lint(
         self, example: CodeExample, *, ruff: bool = True, black: bool = True, line_length: int = DEFAULT_LINE_LENGTH
     ) -> None:
+        """
+        Lint the example.
+
+        :param example: The example to lint.
+        :param ruff: If True, lint the example using ruff.
+        :param black: If True, lint the example using black.
+        :param line_length: The line length to use when linting.
+        """
         if ruff:
             self.lint_ruff(example, line_length=line_length)
         if black:
@@ -78,12 +98,24 @@ class EvalExample:
         line_length: int = DEFAULT_LINE_LENGTH,
         config: dict[str, Any] | None = None,
     ) -> None:
-        __tracebackhide__ = True
+        """
+        Lint the example using ruff.
+
+        :param example: The example to lint.
+        :param extra_ruff_args: Extra arguments to pass to ruff.
+        :param line_length: The line length to use when linting.
+        :param config: key-value pairs to write to a .ruff.toml file in the directory of the example to configure ruff.
+        """
         python_file = self._write_file(example)
         ruff_check(example, python_file, extra_ruff_args, line_length, config)
 
     def lint_black(self, example: CodeExample, *, line_length: int = DEFAULT_LINE_LENGTH) -> None:
-        __tracebackhide__ = True
+        """
+        Lint the example using black.
+
+        :param example: The example to lint.
+        :param line_length: The line length to use when linting.
+        """
         black_check(example, line_length)
 
     def _write_file(self, example: CodeExample) -> Path:
