@@ -28,10 +28,12 @@ if True:
 
 ```py
 print('this is another example')
+#> this is another example
 ```
 
 # And another
 
 ```py
 print(b'hello world')
+#> b'hello world'
 ```

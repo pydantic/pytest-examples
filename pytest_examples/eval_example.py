@@ -173,13 +173,18 @@ def _update_examples(examples: list[CodeExample]):
             raise RuntimeError('Cannot update the same file in separate tests!')
         files |= new_files
 
+    print(f'pytest-examples: {len(examples)} examples to update in {len(files)} file(s)...')
+
     for path, g in groupby(examples, key=lambda ex: ex.path):
         content = path.read_text()
+        count = 0
         for ex in g:
             example: CodeExample = ex
             new_source = example.source
             if example.indent:
                 new_source = indent(new_source, ' ' * example.indent)
             content = content[: example.start_index] + new_source + content[example.end_index :]
+            count += 1
 
+        print(f'  {path} {count} examples updated')
         path.write_text(content)
