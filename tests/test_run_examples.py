@@ -1,4 +1,9 @@
+import re
+import sys
+
 import pytest
+
+from pytest_examples import CodeExample
 
 # language=Python
 python_code = """
@@ -6,11 +11,12 @@ from pytest_examples import find_examples, CodeExample, EvalExample
 import pytest
 
 @pytest.mark.parametrize('example', find_examples('.'))
-def test_find_run_examples(example: CodeExample, run_example: EvalExample):
-    run_example.run(example)
+def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
+    eval_example.run(example)
 """
 
 
+@pytest.mark.skipif(sys.version_info < (3, 8), reason='traceback different on 3.7')
 def test_run_example_ok_fail(pytester: pytest.Pytester):
     pytester.makefile(
         '.md',
@@ -31,12 +37,29 @@ assert a + b == 4
 ```
         """,
     )
-    pytester.makepyfile(python_code)
+    # language=Python
+    pytester.makepyfile(
+        """
+from pytest_examples import find_examples, CodeExample, EvalExample
+import pytest
+
+@pytest.mark.parametrize('example', find_examples('.'))
+def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
+    eval_example.run(example, rewrite_assertions=False)
+"""
+    )
 
     result = pytester.runpytest('-p', 'no:pretty', '-v')
     result.assert_outcomes(passed=1, failed=1)
 
-    assert 'my_file_9_13.py:12: AssertionError' in '\n'.join(result.outlines)
+    # assert 'my_file_9_13.py:12: AssertionError' in '\n'.join(result.outlines)
+    assert result.outlines[-8:-3] == [
+        '',
+        '>   assert a + b == 4',
+        'E   AssertionError',
+        '',
+        'my_file.md:12: AssertionError',
+    ]
 
 
 def test_run_example_skip(pytester: pytest.Pytester):
@@ -71,8 +94,8 @@ from pytest_examples import find_examples, CodeExample, EvalExample
 import pytest
 
 @pytest.mark.parametrize('example', find_examples('.'))
-def test_find_run_examples(example: CodeExample, run_example: EvalExample):
-    run_example.lint_ruff(example)
+def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
+    eval_example.lint_ruff(example)
 """
     )
 
@@ -92,8 +115,8 @@ from pytest_examples import find_examples, CodeExample, EvalExample
 import pytest
 
 @pytest.mark.parametrize('example', find_examples('.'))
-def test_find_run_examples(example: CodeExample, run_example: EvalExample):
-    run_example.lint_ruff(example)
+def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
+    eval_example.lint_ruff(example)
 """
     )
 
@@ -101,8 +124,17 @@ def test_find_run_examples(example: CodeExample, run_example: EvalExample):
     result.assert_outcomes(failed=1)
 
     output = '\n'.join(result.outlines)
-    assert '<path>/my_file_1_4.py:2:8: F401 [*] `sys` imported but unused' in output
-    assert '<path>/my_file_1_4.py:3:7: F821 Undefined name `missing`' in output
+    output = re.sub(r'(=|_){3,}', r'\1\1\1', output)
+    assert (
+        '=== FAILURES ===\n'
+        '___ test_find_run_examples[my_file.md:1-4] ___\n'
+        'ruff failed:\n'
+        '  my_file.md:2:8: F401 [*] `sys` imported but unused\n'
+        '  my_file.md:3:7: F821 Undefined name `missing`\n'
+        '  Found 2 errors.\n'
+        '  [*] 1 potentially fixable with the --fix option.\n'
+        '=== short test summary info ===\n'
+    ) in output
 
 
 def test_black_ok(pytester: pytest.Pytester):
@@ -117,8 +149,8 @@ from pytest_examples import find_examples, CodeExample, EvalExample
 import pytest
 
 @pytest.mark.parametrize('example', find_examples('.'))
-def test_find_run_examples(example: CodeExample, run_example: EvalExample):
-    run_example.lint_black(example)
+def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
+    eval_example.lint_black(example)
 """
     )
 
@@ -138,22 +170,24 @@ from pytest_examples import find_examples, CodeExample, EvalExample
 import pytest
 
 @pytest.mark.parametrize('example', find_examples('.'))
-def test_find_run_examples(example: CodeExample, run_example: EvalExample):
-    run_example.lint_black(example)
+def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
+    eval_example.lint_black(example)
 """
     )
 
     result = pytester.runpytest('-p', 'no:pretty', '-v')
     result.assert_outcomes(failed=1)
 
-    e_lines = [line for line in result.outlines if line.startswith('E')]
+    failures_start = next(index for index, line in enumerate(result.outlines) if 'FAILURES' in line)
+    failures_end = next(index for index, line in enumerate(result.outlines) if 'short test summary' in line)
+    e_lines = [line.strip() for line in result.outlines[failures_start + 2 : failures_end]]
     assert e_lines == [
-        'E       Failed: black failed:',
-        'E       --- before',
-        'E       +++ after',
-        'E       @@ -4 +4 @@',
-        'E       -x =[1,2, 3]',
-        'E       +x = [1, 2, 3]',
+        'black failed:',
+        '--- before',
+        '+++ after',
+        '@@ -4 +4 @@',
+        '-x =[1,2, 3]',
+        '+x = [1, 2, 3]',
     ]
 
 
@@ -178,24 +212,59 @@ from pytest_examples import find_examples, CodeExample, EvalExample
 import pytest
 
 @pytest.mark.parametrize('example', find_examples('.'))
-def test_find_run_examples(example: CodeExample, run_example: EvalExample):
-    run_example.lint_black(example)
+def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
+    eval_example.lint_black(example)
 """
     )
 
     result = pytester.runpytest('-p', 'no:pretty', '-v')
     result.assert_outcomes(failed=1)
 
-    e_lines = [line.strip() for line in result.outlines if line.startswith('E')]
+    failures_start = next(index for index, line in enumerate(result.outlines) if 'FAILURES' in line)
+    failures_end = next(index for index, line in enumerate(result.outlines) if 'short test summary' in line)
+    e_lines = [line.strip() for line in result.outlines[failures_start + 2 : failures_end]]
     assert e_lines == [
-        'E       Failed: black failed:',
-        'E       --- before',
-        'E       +++ after',
-        'E       @@ -4,8 +4 @@',
-        'E       -x =[',
-        'E       -    1,',
-        'E       -    2,',
-        'E       -    3',
-        'E       -]',
-        'E       +x = [1, 2, 3]',
+        'black failed:',
+        '--- before',
+        '+++ after',
+        '@@ -4,8 +4 @@',
+        '-x =[',
+        '-    1,',
+        '-    2,',
+        '-    3',
+        '-]',
+        '+x = [1, 2, 3]',
     ]
+
+
+@pytest.mark.skipif(sys.version_info < (3, 8), reason='traceback different on 3.7')
+def test_run_directly(tmp_path, eval_example):
+    # language=Python
+    python_code = """\
+x = 4
+
+def div(y):
+    return x / y
+
+div(2)
+div(0)"""
+    # language=Markdown
+    markdown = f"""\
+# this is markdown
+
+```py
+{python_code}
+```
+"""
+    md_file = tmp_path / 'test.md'
+    md_file.write_text(markdown)
+    example = CodeExample(md_file, 3, '', python_code)
+    with pytest.raises(ZeroDivisionError) as exc_info:
+        eval_example.run(example)
+
+    # debug(exc_info.traceback)
+    assert exc_info.traceback[-1].frame.code.path == md_file
+    assert exc_info.traceback[-1].lineno == 6
+
+    assert exc_info.traceback[-2].frame.code.path == md_file
+    assert exc_info.traceback[-2].lineno == 9

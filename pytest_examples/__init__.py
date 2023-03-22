@@ -18,6 +18,6 @@ def pytest_addoption(parser):
     )
 
 
-@pytest.fixture(name='run_example')
-def run_example(tmp_path: Path, pytestconfig: pytest.Config):
+@pytest.fixture(name='eval_example')
+def eval_example(tmp_path: Path, pytestconfig: pytest.Config):
     return EvalExample(tmp_path=tmp_path, pytest_config=pytestconfig)

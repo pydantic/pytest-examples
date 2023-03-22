@@ -8,6 +8,7 @@ import pytest
 from _pytest.assertion.rewrite import AssertionRewritingHook
 
 from .lint import black_check, ruff_check
+from .traceback import create_example_traceback
 
 if TYPE_CHECKING:
     from .find_examples import CodeExample
@@ -20,7 +21,8 @@ class EvalExample:
         self.tmp_path = tmp_path
         self._pytest_config = pytest_config
 
-    def run(self, example: CodeExample, *, rewrite_assertions: bool = False):
+    def run(self, example: CodeExample, *, rewrite_assertions: bool = True):
+        __tracebackhide__ = True
         if 'test="skip"' in example.prefix:
             pytest.skip('test="skip" on code snippet, skipping')
 
@@ -37,6 +39,12 @@ class EvalExample:
             spec.loader.exec_module(module)
         except KeyboardInterrupt:
             print(f'KeyboardInterrupt in example {self}')
+        except Exception as exc:
+            example_tb = create_example_traceback(exc, str(module_path), example)
+            if example_tb:
+                raise exc.with_traceback(example_tb)
+            else:
+                raise exc
 
     def lint(
         self, example: CodeExample, *, ruff: bool = True, black: bool = True, line_length: int | None = None
@@ -56,7 +64,7 @@ class EvalExample:
     ) -> None:
         __tracebackhide__ = True
         module_path = self._write_file(example)
-        ruff_check(module_path, self.tmp_path, extra_ruff_args, line_length, config)
+        ruff_check(example, module_path, extra_ruff_args, line_length, config)
 
     def lint_black(self, example: CodeExample, *, line_length: int | None = None) -> None:
         __tracebackhide__ = True
@@ -66,5 +74,5 @@ class EvalExample:
         module_path = self.tmp_path / f'{example.module_name}.py'
         if not module_path.exists():
             # assume if it already exists, it's because it was previously written in this test
-            module_path.write_text('\n' * example.start_line + example.source)
+            module_path.write_text(example.source)
         return module_path
