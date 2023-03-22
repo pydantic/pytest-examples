@@ -97,8 +97,6 @@ def create_custom_frame(frame: FrameType, example: CodeExample) -> FrameType:
             f_code.co_name,
             frame.f_lineno + example.start_line,
             f_code.co_lnotab,
-            f_code.co_freevars,
-            f_code.co_cellvars,
         )
 
     return ctypes.pythonapi.PyFrame_New(
