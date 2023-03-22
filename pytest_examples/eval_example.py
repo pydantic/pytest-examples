@@ -150,7 +150,7 @@ class EvalExample:
         return python_file
 
 
-def _update_examples(examples: list[CodeExample]):
+def _update_examples(examples: list[CodeExample]) -> str:
     """
     Internal use only, update examples in place.
     """
@@ -162,7 +162,7 @@ def _update_examples(examples: list[CodeExample]):
             raise RuntimeError('Cannot update the same example in separate tests!')
         unique_examples.add(s)
 
-    # same file should appear on more than one group
+    # same file should not appear in more than one group
     files: set[Path] = set()
     # order by line number descending so the earlier change doesn't mess up line numbers for later changes
     examples.sort(key=lambda x: (x.group, x.start_line), reverse=True)
@@ -173,7 +173,7 @@ def _update_examples(examples: list[CodeExample]):
             raise RuntimeError('Cannot update the same file in separate tests!')
         files |= new_files
 
-    print(f'pytest-examples: {len(examples)} examples to update in {len(files)} file(s)...')
+    msg = [f'pytest-examples: {len(examples)} examples to update in {len(files)} file(s)...']
 
     for path, g in groupby(examples, key=lambda ex: ex.path):
         content = path.read_text()
@@ -186,5 +186,7 @@ def _update_examples(examples: list[CodeExample]):
             content = content[: example.start_index] + new_source + content[example.end_index :]
             count += 1
 
-        print(f'  {path} {count} examples updated')
+        msg.append(f'  {path} {count} examples updated')
         path.write_text(content)
+
+    return '\n'.join(msg)
