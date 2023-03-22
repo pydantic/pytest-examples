@@ -8,8 +8,8 @@ from pytest_examples import find_examples, CodeExample, EvalExample
 import pytest
 
 @pytest.mark.parametrize('example', find_examples('.'))
-def test_find_run_examples(example: CodeExample, run_example: EvalExample):
-    run_example.run(example)
+def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
+    eval_example.run(example)
 """
 
 
@@ -33,7 +33,17 @@ assert a + b == 4
 ```
         """,
     )
-    pytester.makepyfile(python_code)
+    # language=Python
+    pytester.makepyfile(
+        """
+from pytest_examples import find_examples, CodeExample, EvalExample
+import pytest
+
+@pytest.mark.parametrize('example', find_examples('.'))
+def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
+    eval_example.run(example, rewrite_assertions=False)
+"""
+    )
 
     result = pytester.runpytest('-p', 'no:pretty', '-v')
     result.assert_outcomes(passed=1, failed=1)
@@ -80,8 +90,8 @@ from pytest_examples import find_examples, CodeExample, EvalExample
 import pytest
 
 @pytest.mark.parametrize('example', find_examples('.'))
-def test_find_run_examples(example: CodeExample, run_example: EvalExample):
-    run_example.lint_ruff(example)
+def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
+    eval_example.lint_ruff(example)
 """
     )
 
@@ -101,8 +111,8 @@ from pytest_examples import find_examples, CodeExample, EvalExample
 import pytest
 
 @pytest.mark.parametrize('example', find_examples('.'))
-def test_find_run_examples(example: CodeExample, run_example: EvalExample):
-    run_example.lint_ruff(example)
+def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
+    eval_example.lint_ruff(example)
 """
     )
 
@@ -135,8 +145,8 @@ from pytest_examples import find_examples, CodeExample, EvalExample
 import pytest
 
 @pytest.mark.parametrize('example', find_examples('.'))
-def test_find_run_examples(example: CodeExample, run_example: EvalExample):
-    run_example.lint_black(example)
+def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
+    eval_example.lint_black(example)
 """
     )
 
@@ -156,8 +166,8 @@ from pytest_examples import find_examples, CodeExample, EvalExample
 import pytest
 
 @pytest.mark.parametrize('example', find_examples('.'))
-def test_find_run_examples(example: CodeExample, run_example: EvalExample):
-    run_example.lint_black(example)
+def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
+    eval_example.lint_black(example)
 """
     )
 
@@ -198,8 +208,8 @@ from pytest_examples import find_examples, CodeExample, EvalExample
 import pytest
 
 @pytest.mark.parametrize('example', find_examples('.'))
-def test_find_run_examples(example: CodeExample, run_example: EvalExample):
-    run_example.lint_black(example)
+def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
+    eval_example.lint_black(example)
 """
     )
 

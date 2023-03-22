@@ -21,7 +21,7 @@ class EvalExample:
         self.tmp_path = tmp_path
         self._pytest_config = pytest_config
 
-    def run(self, example: CodeExample, *, rewrite_assertions: bool = False):
+    def run(self, example: CodeExample, *, rewrite_assertions: bool = True):
         __tracebackhide__ = True
         if 'test="skip"' in example.prefix:
             pytest.skip('test="skip" on code snippet, skipping')
