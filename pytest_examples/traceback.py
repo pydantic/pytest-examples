@@ -62,24 +62,44 @@ def create_custom_frame(frame: FrameType, example: CodeExample) -> FrameType:
     ctypes.pythonapi.PyThreadState_Get.restype = P_MEM_TYPE
 
     f_code = frame.f_code
-    code = CodeType(
-        f_code.co_argcount,
-        f_code.co_posonlyargcount,
-        f_code.co_kwonlyargcount,
-        f_code.co_nlocals,
-        f_code.co_stacksize,
-        f_code.co_flags,
-        f_code.co_code,
-        f_code.co_consts,
-        f_code.co_names,
-        f_code.co_varnames,
-        str(example.path),
-        f_code.co_name,
-        frame.f_lineno + example.start_line,
-        f_code.co_lnotab,
-        f_code.co_freevars,
-        f_code.co_cellvars,
-    )
+    if sys.version_info >= (3, 11):
+        code = CodeType(
+            f_code.co_argcount,
+            f_code.co_posonlyargcount,
+            f_code.co_kwonlyargcount,
+            f_code.co_nlocals,
+            f_code.co_stacksize,
+            f_code.co_flags,
+            f_code.co_code,
+            f_code.co_consts,
+            f_code.co_names,
+            f_code.co_varnames,
+            str(example.path),
+            f_code.co_name,
+            f_code.co_qualname,
+            frame.f_lineno + example.start_line,
+            f_code.co_lnotab,
+            f_code.co_exceptiontable,
+        )
+    else:
+        code = CodeType(
+            f_code.co_argcount,
+            f_code.co_posonlyargcount,
+            f_code.co_kwonlyargcount,
+            f_code.co_nlocals,
+            f_code.co_stacksize,
+            f_code.co_flags,
+            f_code.co_code,
+            f_code.co_consts,
+            f_code.co_names,
+            f_code.co_varnames,
+            str(example.path),
+            f_code.co_name,
+            frame.f_lineno + example.start_line,
+            f_code.co_lnotab,
+            f_code.co_freevars,
+            f_code.co_cellvars,
+        )
 
     return ctypes.pythonapi.PyFrame_New(
         ctypes.pythonapi.PyThreadState_Get(),  # thread state

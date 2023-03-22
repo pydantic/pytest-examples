@@ -3,6 +3,8 @@ import sys
 
 import pytest
 
+from pytest_examples import CodeExample
+
 # language=Python
 python_code = """
 from pytest_examples import find_examples, CodeExample, EvalExample
@@ -14,7 +16,7 @@ def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
 """
 
 
-@pytest.mark.skipif(sys.version_info >= (3, 10), reason='traceback different on 3.7')
+@pytest.mark.skipif(sys.version_info < (3, 8), reason='traceback different on 3.7')
 def test_run_example_ok_fail(pytester: pytest.Pytester):
     pytester.makefile(
         '.md',
@@ -233,3 +235,35 @@ def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
         '-]',
         '+x = [1, 2, 3]',
     ]
+
+
+def test_run_directly(tmp_path, eval_example):
+    # language=Python
+    python_code = """\
+x = 4
+
+def div(y):
+    return x / y
+
+div(2)
+div(0)"""
+    # language=Markdown
+    markdown = f"""\
+# this is markdown
+
+```py
+{python_code}
+```
+"""
+    md_file = tmp_path / 'test.md'
+    md_file.write_text(markdown)
+    example = CodeExample(md_file, 3, '', python_code)
+    with pytest.raises(ZeroDivisionError) as exc_info:
+        eval_example.run(example)
+
+    # debug(exc_info.traceback)
+    assert exc_info.traceback[-1].frame.code.path == md_file
+    assert exc_info.traceback[-1].lineno == 6
+
+    assert exc_info.traceback[-2].frame.code.path == md_file
+    assert exc_info.traceback[-2].lineno == 9
