@@ -33,6 +33,8 @@ class CodeExample:
     """The indentation of the example, number of spaces."""
     group: UUID | None = None
     """A unique identifier for the example group."""
+    test_id: str | None = None
+    """ID of the test this example was generated for."""
 
     @property
     def module_name(self) -> str:

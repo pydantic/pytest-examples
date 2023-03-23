@@ -28,8 +28,8 @@ format:
 
 .PHONY: lint
 lint:
-	ruff $(sources)
 	black $(sources) --check --diff
+	ruff $(sources)
 
 .PHONY: test
 test:

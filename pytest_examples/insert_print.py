@@ -21,11 +21,36 @@ __all__ = ('InsertPrintStatements',)
 parent_frame_id = 4 if sys.version_info >= (3, 8) else 3
 
 
+@dataclass(init=False)
+class Arg:
+    string: str | None = None
+    code: str | None = None
+
+    def __init__(self, v: Any):
+        if isinstance(v, str):
+            self.string = v
+        else:
+            self.code = str(v)
+
+    def __str__(self) -> str:
+        if self.string is not None:
+            return self.string
+        else:
+            return self.code
+
+    def format(self, black_length: int) -> str:
+        if self.string is not None:
+            r = repr(self.string)
+        else:
+            r = self.code
+        return black_format(r, black_length)
+
+
 @dataclass
 class PrintStatement:
     line_no: int
     sep: str
-    args: list[str]
+    args: list[Arg]
 
 
 class MockPrintFunction:
@@ -38,7 +63,7 @@ class MockPrintFunction:
 
         if self.file.samefile(frame.filename):
             # -1 to account for the line number being 1-indexed
-            s = PrintStatement(frame.lineno - 1, sep, [str(arg) for arg in args])
+            s = PrintStatement(frame.lineno - 1, sep, [Arg(arg) for arg in args])
             self.statements.append(s)
 
 
@@ -82,14 +107,14 @@ class InsertPrintStatements:
         return '\n'.join(lines) + '\n'
 
     def _insert_print_args(self, lines: list[str], statement: PrintStatement, indent_str: str) -> None:
-        single_line = statement.sep.join(statement.args)
+        single_line = statement.sep.join(map(str, statement.args))
         if len(single_line) < self.line_length - len(indent_str) - len(comment_prefix):
             lines.insert(statement.line_no + 1, f'{indent_str}{comment_prefix}{single_line}')
         else:
             # if the statement is too long to go on one line, print each arg on its own line formatted with black
             sep = f'{statement.sep}\n'
             black_length = self.line_length - len(indent_str)
-            output = sep.join(black_format(arg, black_length) for arg in statement.args)
+            output = sep.join(arg.format(black_length) for arg in statement.args)
             lines.insert(statement.line_no + 1, indent(f'"""\n{output}"""', indent_str))
 
 

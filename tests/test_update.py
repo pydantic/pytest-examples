@@ -57,7 +57,7 @@ def test_find_examples(example: CodeExample, eval_example: EvalExample):
     result = pytester.runpytest('-p', 'no:pretty')
     result.assert_outcomes(passed=3)
 
-    result = pytester.runpytest('-p', 'no:pretty', '--update-examples')
+    result = pytester.runpytest('-p', 'no:pretty', '--update-examples', '--update-examples-disable-summary')
     result.assert_outcomes(passed=3)
 
     assert md_file.read_text() == (

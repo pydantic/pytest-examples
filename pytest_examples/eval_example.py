@@ -1,9 +1,7 @@
 from __future__ import annotations as _annotations
 
 import importlib.util
-from itertools import groupby
 from pathlib import Path
-from textwrap import indent
 from typing import TYPE_CHECKING, Any, Literal
 
 import pytest
@@ -24,9 +22,10 @@ class EvalExample:
     Class to run and lint examples.
     """
 
-    def __init__(self, *, tmp_path: Path, pytest_config: pytest.Config):
+    def __init__(self, *, tmp_path: Path, pytest_request: pytest.FixtureRequest):
         self.tmp_path = tmp_path
-        self._pytest_config = pytest_config
+        self._pytest_config = pytest_request.config
+        self._test_id = pytest_request.node.nodeid
         self.to_update: list[CodeExample] = []
 
     @property
@@ -47,6 +46,7 @@ class EvalExample:
         :param rewrite_assertions: If True, rewrite assertions in the example using pytest's assertion rewriting.
         """
         __tracebackhide__ = True
+        example.test_id = self._test_id
         self._run(example, None, line_length, rewrite_assertions)
 
     def run_print_check(
@@ -63,6 +63,7 @@ class EvalExample:
         :param rewrite_assertions: If True, rewrite assertions in the example using pytest's assertion rewriting.
         """
         __tracebackhide__ = True
+        example.test_id = self._test_id
         insert_print = self._run(example, 'check', line_length, rewrite_assertions)
         insert_print.check_print_statements(example)
 
@@ -80,14 +81,13 @@ class EvalExample:
         :param rewrite_assertions: If True, rewrite assertions in the example using pytest's assertion rewriting.
         """
         __tracebackhide__ = True
-        if not self.update_examples:
-            raise RuntimeError('Cannot update examples without --update-examples')
+        self._check_update(example)
         insert_print = self._run(example, 'update', line_length, rewrite_assertions)
 
         new_code = insert_print.updated_print_statements(example)
         if new_code:
             example.source = new_code
-            self.to_update.append(example)
+            self._mark_for_update(example)
 
     def _run(
         self,
@@ -134,21 +134,25 @@ class EvalExample:
 
         return insert_print
 
-    def lint(
-        self, example: CodeExample, *, ruff: bool = True, black: bool = True, line_length: int = DEFAULT_LINE_LENGTH
-    ) -> None:
+    def lint(self, example: CodeExample, *, line_length: int = DEFAULT_LINE_LENGTH) -> None:
         """
-        Lint the example.
+        Lint the example with black and ruff.
 
         :param example: The example to lint.
-        :param ruff: If True, lint the example using ruff.
-        :param black: If True, lint the example using black.
         :param line_length: The line length to use when linting.
         """
-        if ruff:
-            self.lint_ruff(example, line_length=line_length)
-        if black:
-            self.lint_black(example, line_length=line_length)
+        self.lint_black(example, line_length=line_length)
+        self.lint_ruff(example, line_length=line_length)
+
+    def lint_black(self, example: CodeExample, *, line_length: int = DEFAULT_LINE_LENGTH) -> None:
+        """
+        Lint the example using black.
+
+        :param example: The example to lint.
+        :param line_length: The line length to use when linting.
+        """
+        example.test_id = self._test_id
+        black_check(example, line_length)
 
     def lint_ruff(
         self,
@@ -166,33 +170,33 @@ class EvalExample:
         :param line_length: The line length to use when linting.
         :param config: key-value pairs to write to a .ruff.toml file in the directory of the example to configure ruff.
         """
+        example.test_id = self._test_id
         python_file = self._write_file(example)
         ruff_check(example, python_file, extra_ruff_args, line_length, config)
 
-    def lint_black(self, example: CodeExample, *, line_length: int = DEFAULT_LINE_LENGTH) -> None:
+    def format(self, example: CodeExample, *, line_length: int = DEFAULT_LINE_LENGTH) -> None:
         """
-        Lint the example using black.
+        Format the example with black and ruff, requires `--update-examples`.
+
+        :param example: The example to format.
+        :param line_length: The line length to use when formatting.
+        """
+        self.format_black(example, line_length=line_length)
+        self.format_ruff(example, line_length=line_length)
+
+    def format_black(self, example: CodeExample, *, line_length: int = DEFAULT_LINE_LENGTH) -> None:
+        """
+        Format the example using black, requires `--update-examples`.
 
         :param example: The example to lint.
         :param line_length: The line length to use when linting.
         """
-        black_check(example, line_length)
+        self._check_update(example)
 
-    def format(
-        self, example: CodeExample, *, ruff: bool = True, black: bool = True, line_length: int = DEFAULT_LINE_LENGTH
-    ) -> None:
-        """
-        Format the example, requires `--update-examples`.
-
-        :param example: The example to format.
-        :param ruff: If True, format the example using ruff.
-        :param black: If True, format the example using black.
-        :param line_length: The line length to use when formatting.
-        """
-        if ruff:
-            self.format_ruff(example, line_length=line_length)
-        if black:
-            self.format_black(example, line_length=line_length)
+        new_content = black_format(example.source, line_length)
+        if new_content != example.source:
+            example.source = new_content
+            self._mark_for_update(example)
 
     def format_ruff(
         self,
@@ -210,75 +214,33 @@ class EvalExample:
         :param line_length: The line length to use when linting.
         :param config: key-value pairs to write to a .ruff.toml file in the directory of the example to configure ruff.
         """
-        if not self.update_examples:
-            raise RuntimeError('Cannot update examples without --update-examples')
+        self._check_update(example)
 
         python_file = self._write_file(example)
         new_content = ruff_format(example, python_file, extra_ruff_args, line_length, config)
         if new_content != example.source:
             example.source = new_content
-            self.to_update.append(example)
+            self._mark_for_update(example)
 
-    def format_black(self, example: CodeExample, *, line_length: int = DEFAULT_LINE_LENGTH) -> None:
-        """
-        Format the example using black, requires `--update-examples`.
-
-        :param example: The example to lint.
-        :param line_length: The line length to use when linting.
-        """
+    def _check_update(self, example: CodeExample) -> None:
         if not self.update_examples:
             raise RuntimeError('Cannot update examples without --update-examples')
+        example.test_id = self._test_id
 
-        new_content = black_format(example.source, line_length)
-        if new_content != example.source:
-            example.source = new_content
+    def _mark_for_update(self, example: CodeExample) -> None:
+        """
+        Add the example to self.to_update IF it's not already there.
+        """
+        s = str(example)
+        if not any(s == str(ex) for ex in self.to_update):
             self.to_update.append(example)
 
     def _write_file(self, example: CodeExample) -> Path:
         python_file = self.tmp_path / f'{example.module_name}.py'
-        if not python_file.exists():
+        if self.update_examples:
+            # if we're in update mode, we need to always rewrite the file
+            python_file.write_text(example.source)
+        elif not python_file.exists():
             # assume if it already exists, it's because it was previously written in this test
             python_file.write_text(example.source)
         return python_file
-
-
-def _update_examples(examples: list[CodeExample]) -> str:
-    """
-    Internal use only, update examples in place.
-    """
-    # The same example shouldn't appear more than once
-    unique_examples: set[str] = set()
-    for ex in examples:
-        s = str(ex)
-        if s in unique_examples:
-            raise RuntimeError('Cannot update the same example in separate tests!')
-        unique_examples.add(s)
-
-    # same file should not appear in more than one group
-    files: set[Path] = set()
-    # order by line number descending so the earlier change doesn't mess up line numbers for later changes
-    examples.sort(key=lambda x: (x.group, x.start_line), reverse=True)
-
-    for _, g in groupby(examples, key=lambda x: x.group):
-        new_files = {ex.path for ex in g}
-        if new_files & files:
-            raise RuntimeError('Cannot update the same file in separate tests!')
-        files |= new_files
-
-    msg = [f'pytest-examples: {len(examples)} examples to update in {len(files)} file(s)...']
-
-    for path, g in groupby(examples, key=lambda ex: ex.path):
-        content = path.read_text()
-        count = 0
-        for ex in g:
-            example: CodeExample = ex
-            new_source = example.source
-            if example.indent:
-                new_source = indent(new_source, ' ' * example.indent)
-            content = content[: example.start_index] + new_source + content[example.end_index :]
-            count += 1
-
-        msg.append(f'  {path} {count} examples updated')
-        path.write_text(content)
-
-    return '\n'.join(msg)

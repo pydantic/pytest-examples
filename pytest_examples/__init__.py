@@ -19,6 +19,11 @@ def pytest_addoption(parser):
             'Update code examples to reflect print output and linting.'
         ),
     )
+    group.addoption(
+        '--update-examples-disable-summary',
+        action='store_true',
+        help='Disable the summary of updated examples at the end of the test run.',
+    )
 
 
 summary: str | None = None
@@ -34,19 +39,21 @@ def _examples_to_update(pytestconfig: pytest.Config) -> list[CodeExample]:
     examples_to_update: list[CodeExample] = []
     yield examples_to_update
     if pytestconfig.getoption('update_examples') and examples_to_update:
-        from .eval_example import _update_examples
+        from .modify_files import _modify_files
 
-        summary = _update_examples(examples_to_update)
+        summary_ = _modify_files(examples_to_update)
+        if not pytestconfig.getoption('update_examples_disable_summary'):
+            summary = summary_
 
 
 @pytest.fixture(name='eval_example')
-def eval_example(tmp_path: Path, pytestconfig: pytest.Config, _examples_to_update) -> EvalExample:
+def eval_example(tmp_path: Path, request: pytest.FixtureRequest, _examples_to_update) -> EvalExample:
     """
     Fixture to return a `EvalExample` instance for running and linting examples.
     """
-    eval_ex = EvalExample(tmp_path=tmp_path, pytest_config=pytestconfig)
+    eval_ex = EvalExample(tmp_path=tmp_path, pytest_request=request)
     yield eval_ex
-    if pytestconfig.getoption('update_examples'):
+    if request.config.getoption('update_examples'):
         _examples_to_update.extend(eval_ex.to_update)
 
 
