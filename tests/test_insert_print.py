@@ -1,6 +1,5 @@
 from __future__ import annotations as _annotations
 
-import sys
 from pathlib import Path
 
 import pytest
@@ -222,7 +221,6 @@ print(
 ]
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason='getting last line is wrong in 3.7')
 @pytest.mark.parametrize('python_code', unchanged_code)
 def test_insert_print_check_unchanged(tmp_path, eval_example, python_code: str):
     # note this file is no written here as it's not required

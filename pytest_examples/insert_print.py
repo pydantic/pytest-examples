@@ -54,6 +54,12 @@ class PrintStatement:
     args: list[Arg]
 
 
+def not_print(*args):
+    import sys
+
+    sys.stdout.write(' '.join(map(str, args)) + '\n')
+
+
 class MockPrintFunction:
     def __init__(self, file: Path) -> None:
         self.file = file
@@ -134,6 +140,21 @@ comment_prefix_re = re.compile(f'^ *{re.escape(comment_prefix)}', re.MULTILINE)
 triple_quotes_prefix_re = re.compile('^ *(?:"{3}|\'{3})', re.MULTILINE)
 
 
+def find_print_line(lines: list[str], line_no: int) -> int:
+    """
+    For 3.7 we have to reverse through lines to find the print statement lint
+    """
+    if sys.version_info >= (3, 8):
+        return line_no
+
+    for back in range(100):
+        new_line_no = line_no - back
+        m = re.search(r'^ *print\(', lines[new_line_no - 1])
+        if m:
+            return new_line_no
+    return line_no
+
+
 def remove_old_print(lines: list[str], line_index: int) -> None:
     """
     Remove the old print statement.
@@ -159,16 +180,27 @@ def remove_old_print(lines: list[str], line_index: int) -> None:
             pass
 
 
-def find_print_location(example: CodeExample, line: int) -> tuple[int, int]:
+def find_print_location(example: CodeExample, line_no: int) -> tuple[int, int]:
     """
     Find the line and column of the print statement.
 
     :param example: the `CodeExample`
-    :param line: The line number on which the print statement starts
+    :param line_no: The line number on which the print statement starts (or approx on 3.7)
     :return: tuple if `(line, column)` of the print statement
     """
+    # For 3.7 we have to reverse through lines to find the print statement lint
+    if sys.version_info < (3, 8):
+        # find the last print statement before the line
+        lines = example.source.splitlines()
+        for back in range(100):
+            new_line_no = line_no - back
+            m = re.match(r' *print\(', lines[new_line_no - 1])
+            if m:
+                line_no = new_line_no
+                break
+
     m = ast.parse(example.source, filename=example.path.name)
-    return find_print(m, line) or (line, 0)
+    return find_print(m, line_no) or (line_no, 0)
 
 
 def find_print(node: Any, line: int) -> tuple[int, int] | None:
