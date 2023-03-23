@@ -99,6 +99,7 @@ class InsertPrintStatements:
         assert self.print_func is not None, 'print statements not being inserted'
 
         lines = example.source.splitlines()
+        in_python = example.path.suffix == '.py'
 
         for s in reversed(self.print_func.statements):
             line_no, col = find_print_location(example, s.line_no)
@@ -107,11 +108,13 @@ class InsertPrintStatements:
             line_index = line_no - 1
 
             remove_old_print(lines, line_index)
-            self._insert_print_args(lines, s, line_index, col)
+            self._insert_print_args(lines, s, in_python, line_index, col)
 
         return '\n'.join(lines) + '\n'
 
-    def _insert_print_args(self, lines: list[str], statement: PrintStatement, line_index: int, col: int) -> None:
+    def _insert_print_args(
+        self, lines: list[str], statement: PrintStatement, in_python: bool, line_index: int, col: int
+    ) -> None:
         single_line = statement.sep.join(map(str, statement.args))
         indent_str = ' ' * col
         if len(single_line) < self.line_length - len(indent_str) - len(comment_prefix):
@@ -121,12 +124,14 @@ class InsertPrintStatements:
             sep = f'{statement.sep}\n'
             black_length = self.line_length - len(indent_str)
             output = sep.join(arg.format(black_length) for arg in statement.args)
-            lines.insert(line_index + 1, indent(f'"""\n{output}"""', indent_str))
+            # have to use triple single quotes in python since we're already in a double quotes docstring
+            quote = "'''" if in_python else '"""'
+            lines.insert(line_index + 1, indent(f'{quote}\n{output}{quote}', indent_str))
 
 
 comment_prefix = '#> '
 comment_prefix_re = re.compile(f'^ *{re.escape(comment_prefix)}', re.MULTILINE)
-triple_quotes_prefix = re.compile('^ *"""', re.MULTILINE)
+triple_quotes_prefix_re = re.compile('^ *(?:"{3}|\'{3})', re.MULTILINE)
 
 
 def remove_old_print(lines: list[str], line_index: int) -> None:
@@ -139,9 +144,9 @@ def remove_old_print(lines: list[str], line_index: int) -> None:
         # end of file
         return
 
-    if triple_quotes_prefix.search(next_line):
+    if triple_quotes_prefix_re.search(next_line):
         for i in range(2, 100):
-            if triple_quotes_prefix.search(lines[line_index + i]):
+            if triple_quotes_prefix_re.search(lines[line_index + i]):
                 del lines[line_index + 1 : line_index + i + 1]
                 return
         raise ValueError('Could not find end of triple quotes')
