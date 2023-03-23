@@ -192,8 +192,7 @@ class EvalExample:
         :param example: The example to lint.
         """
         example.test_id = self._test_id
-        python_file = self._write_file(example)
-        ruff_check(example, python_file, self.config)
+        ruff_check(example, self.tmp_path, self.config)
 
     def format(self, example: CodeExample) -> None:
         """
@@ -228,8 +227,7 @@ class EvalExample:
         """
         self._check_update(example)
 
-        python_file = self._write_file(example)
-        new_content = ruff_format(example, python_file, self.config)
+        new_content = ruff_format(example, self.tmp_path, self.config)
         if new_content != example.source:
             example.source = new_content
             self._mark_for_update(example)

@@ -1,8 +1,8 @@
 from __future__ import annotations as _annotations
 
 import re
-import subprocess
 from pathlib import Path
+from subprocess import PIPE, Popen
 from textwrap import indent
 from typing import TYPE_CHECKING
 
@@ -22,38 +22,44 @@ __all__ = 'ruff_check', 'ruff_format', 'black_check', 'black_format', 'code_diff
 
 def ruff_format(
     example: CodeExample,
-    python_file: Path,
+    tmp_dir: Path,
     config: ExamplesConfig | None,
 ) -> str:
     args = ('--fix',)
-    ruff_check(example, python_file, config, extra_ruff_args=args)
-    return python_file.read_text()
+    return ruff_check(example, tmp_dir, config, extra_ruff_args=args)
 
 
 def ruff_check(
     example: CodeExample,
-    python_file: Path,
+    tmp_dir: Path,
     config: ExamplesConfig,
     *,
     extra_ruff_args: tuple[str, ...] = (),
-) -> None:
-    args = 'ruff', 'check', str(python_file), *extra_ruff_args
+) -> str:
+    args = 'ruff', '-'
 
     ruff_config = to_ruff_config(config)
     if ruff_config:
-        (python_file.parent / 'ruff.toml').write_text(ruff_config)
+        config_file = tmp_dir / 'ruff.toml'
+        config_file.write_text(ruff_config)
+        args += '--config', str(config_file)
 
-    p = subprocess.run(args, capture_output=True, text=True)
-    if p.returncode == 1 and p.stdout:
+    args += extra_ruff_args
+
+    p = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, universal_newlines=True)
+    stdout, stderr = p.communicate(example.source, timeout=2)
+    if p.returncode == 1 and stdout:
 
         def replace_offset(m: re.Match):
             line_number = int(m.group(1))
             return f'{example.path}:{line_number + example.start_line}'
 
-        output = re.sub(rf'^{re.escape(str(python_file))}:(\d+)', replace_offset, p.stdout, flags=re.M)
+        output = re.sub(r'^-:(\d+)', replace_offset, stdout, flags=re.M)
         pytest.fail(f'ruff failed:\n{indent(output, "  ")}', pytrace=False)
     elif p.returncode != 0:
-        raise RuntimeError(f'Error running ruff, return code {p.returncode}:\n{p.stderr or p.stdout}')
+        raise RuntimeError(f'Error running ruff, return code {p.returncode}:\n{stderr or stdout}')
+    else:
+        return stdout
 
 
 def to_ruff_config(config: ExamplesConfig) -> str | None:
