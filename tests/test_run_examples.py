@@ -10,7 +10,7 @@ python_code = """
 from pytest_examples import find_examples, CodeExample, EvalExample
 import pytest
 
-@pytest.mark.parametrize('example', find_examples('.'))
+@pytest.mark.parametrize('example', find_examples('.'), ids=str)
 def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
     eval_example.run(example)
 """
@@ -43,7 +43,7 @@ assert a + b == 4
 from pytest_examples import find_examples, CodeExample, EvalExample
 import pytest
 
-@pytest.mark.parametrize('example', find_examples('.'))
+@pytest.mark.parametrize('example', find_examples('.'), ids=str)
 def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
     eval_example.run(example, rewrite_assertions=False)
 """
@@ -93,7 +93,7 @@ def test_ruff_ok(pytester: pytest.Pytester):
 from pytest_examples import find_examples, CodeExample, EvalExample
 import pytest
 
-@pytest.mark.parametrize('example', find_examples('.'))
+@pytest.mark.parametrize('example', find_examples('.'), ids=str)
 def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
     eval_example.lint_ruff(example)
 """
@@ -114,7 +114,7 @@ def test_ruff_error(pytester: pytest.Pytester):
 from pytest_examples import find_examples, CodeExample, EvalExample
 import pytest
 
-@pytest.mark.parametrize('example', find_examples('.'))
+@pytest.mark.parametrize('example', find_examples('.'), ids=str)
 def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
     eval_example.lint_ruff(example)
 """
@@ -148,7 +148,7 @@ def test_black_ok(pytester: pytest.Pytester):
 from pytest_examples import find_examples, CodeExample, EvalExample
 import pytest
 
-@pytest.mark.parametrize('example', find_examples('.'))
+@pytest.mark.parametrize('example', find_examples('.'), ids=str)
 def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
     eval_example.lint_black(example)
 """
@@ -169,7 +169,7 @@ def test_black_error(pytester: pytest.Pytester):
 from pytest_examples import find_examples, CodeExample, EvalExample
 import pytest
 
-@pytest.mark.parametrize('example', find_examples('.'))
+@pytest.mark.parametrize('example', find_examples('.'), ids=str)
 def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
     eval_example.lint_black(example)
 """
@@ -211,7 +211,7 @@ x =[
 from pytest_examples import find_examples, CodeExample, EvalExample
 import pytest
 
-@pytest.mark.parametrize('example', find_examples('.'))
+@pytest.mark.parametrize('example', find_examples('.'), ids=str)
 def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
     eval_example.lint_black(example)
 """

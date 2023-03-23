@@ -29,7 +29,7 @@ assert c + d == 7
 from pytest_examples import find_examples
 import pytest
 
-@pytest.mark.parametrize('example', find_examples('.'))
+@pytest.mark.parametrize('example', find_examples('.'), ids=str)
 def test_find_examples(example):
     assert example.indent == 0
     assert example.end_line == example.start_line + 4
@@ -83,7 +83,7 @@ def func_b():
 from pytest_examples import find_examples
 import pytest
 
-@pytest.mark.parametrize('example', find_examples('.'))
+@pytest.mark.parametrize('example', find_examples('.'), ids=str)
 def test_find_examples(example):
     assert example.indent == 4
         """
@@ -118,7 +118,7 @@ assert a + b == 3
 from pytest_examples import find_examples
 import pytest
 
-@pytest.mark.parametrize('example', find_examples('my_file.md'))
+@pytest.mark.parametrize('example', find_examples('my_file.md'), ids=str)
 def test_find_examples(example):
     pass
         """
@@ -138,7 +138,7 @@ def test_find_missing(pytester: pytest.Pytester):
 from pytest_examples import find_examples
 import pytest
 
-@pytest.mark.parametrize('example', find_examples('missing.md'))
+@pytest.mark.parametrize('example', find_examples('missing.md'), ids=str)
 def test_find_examples(example):
     pass
         """
@@ -164,9 +164,9 @@ assert a + b == 3
     (tmp_path / 'a.md').write_text(code)
     examples = list(find_examples(str(tmp_path)))
     assert len(examples) == 1
-    example: CodeExample = examples[0].values[0]
-    assert code[example.start_index : example.end_index] == ('a = 1\n' 'b = 2\n' 'assert a + b == 3\n')
-    assert example.source == ('a = 1\n' 'b = 2\n' 'assert a + b == 3\n')
+    example: CodeExample = examples[0]
+    assert code[example.start_index : example.end_index] == 'a = 1\nb = 2\nassert a + b == 3\n'
+    assert example.source == 'a = 1\nb = 2\nassert a + b == 3\n'
 
 
 def test_find_index_python(tmp_path):
@@ -186,6 +186,6 @@ def func_a():
     (tmp_path / 'a.py').write_text(code)
     examples = list(find_examples(str(tmp_path)))
     assert len(examples) == 1
-    example: CodeExample = examples[0].values[0]
-    assert code[example.start_index : example.end_index] == ('    a = 1\n' '    b = 2\n' '    assert a + b == 3\n')
-    assert example.source == ('a = 1\n' 'b = 2\n' 'assert a + b == 3\n')
+    example: CodeExample = examples[0]
+    assert code[example.start_index : example.end_index] == '    a = 1\n    b = 2\n    assert a + b == 3\n'
+    assert example.source == 'a = 1\nb = 2\nassert a + b == 3\n'

@@ -33,7 +33,7 @@ from pytest_examples import find_examples, CodeExample, EvalExample
 import pytest
 
 
-@pytest.mark.parametrize('example', find_examples('.'))
+@pytest.mark.parametrize('example', find_examples('.'), ids=str)
 def test_find_examples(example: CodeExample, eval_example: EvalExample):
     eval_example.set_config(line_length=30, quotes='double')
     if eval_example.update_examples:

@@ -24,7 +24,7 @@ import pytest
 from pytest_examples import find_examples, CodeExample, EvalExample
 
 
-@pytest.mark.parametrize('example', find_examples('foo_dir', 'bar_file.py'))
+@pytest.mark.parametrize('example', find_examples('foo_dir', 'bar_file.py'), ids=str)
 def test_docstrings(example: CodeExample, eval_example: EvalExample):
     eval_example.lint(example)
     eval_example.run(example)
@@ -65,7 +65,7 @@ import pytest
 from pytest_examples import find_examples, CodeExample, EvalExample
 
 
-@pytest.mark.parametrize('example', find_examples('foo_dir'))
+@pytest.mark.parametrize('example', find_examples('foo_dir'), ids=str)
 def test_docstrings(example: CodeExample, eval_example: EvalExample):
     eval_example.run_print_check(example)
 ```
@@ -84,7 +84,7 @@ import pytest
 from pytest_examples import find_examples, CodeExample, EvalExample
 
 
-@pytest.mark.parametrize('example', find_examples('README.md'))
+@pytest.mark.parametrize('example', find_examples('README.md'), ids=str)
 def test_readme(example: CodeExample, eval_example: EvalExample):
     if eval_example.update_examples:
         eval_example.format(example)

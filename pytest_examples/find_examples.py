@@ -4,9 +4,8 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 from textwrap import dedent
+from typing import Iterable
 from uuid import UUID, uuid4
-
-import pytest
 
 __all__ = 'CodeExample', 'find_examples'
 
@@ -81,7 +80,7 @@ class CodeExample:
         return f'{path}:{self.start_line}-{self.end_line}'
 
 
-def find_examples(*directories: str):
+def find_examples(*directories: str) -> Iterable[CodeExample]:
     """
     Find Python code examples in markdown files and python file docstrings.
 
@@ -112,7 +111,9 @@ def find_examples(*directories: str):
                 yield from _extract_code_chunks(path, code, group)
 
 
-def _extract_code_chunks(path: Path, text: str, group: UUID, *, line_offset: int = 0, index_offset: int = 0):
+def _extract_code_chunks(
+    path: Path, text: str, group: UUID, *, line_offset: int = 0, index_offset: int = 0
+) -> Iterable[CodeExample]:
     for m_code in re.finditer(r'(^ *)```(.*?)$\n(.+?)\1```', text, flags=re.M | re.S):
         prefix = m_code.group(2).lower()
         if prefix.startswith(('py', '{.py')):
@@ -121,7 +122,7 @@ def _extract_code_chunks(path: Path, text: str, group: UUID, *, line_offset: int
             source_dedent, indent = remove_indent(source)
             # 3 for the ``` and 1 for the newline
             start_index = index_offset + m_code.start() + len(m_code.group(1)) + 3 + len(prefix) + 1
-            example = CodeExample(
+            yield CodeExample(
                 path,
                 start_line,
                 start_line + source.count('\n') + 1,
@@ -132,7 +133,6 @@ def _extract_code_chunks(path: Path, text: str, group: UUID, *, line_offset: int
                 indent,
                 group,
             )
-            yield pytest.param(example, id=str(example))
 
 
 def remove_indent(text: str) -> tuple[str, int]:

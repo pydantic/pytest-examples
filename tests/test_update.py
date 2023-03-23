@@ -41,7 +41,7 @@ def func_a():
 from pytest_examples import find_examples, CodeExample, EvalExample
 import pytest
 
-@pytest.mark.parametrize('example', find_examples('.'))
+@pytest.mark.parametrize('example', find_examples('.'), ids=str)
 def test_find_examples(example: CodeExample, eval_example: EvalExample):
     if eval_example.update_examples:
         eval_example.lint(example)
@@ -111,12 +111,12 @@ print("this is the first example")
 from pytest_examples import find_examples, CodeExample, EvalExample
 import pytest
 
-@pytest.mark.parametrize('example', find_examples('.'))
+@pytest.mark.parametrize('example', find_examples('.'), ids=str)
 def test_a(example: CodeExample, eval_example: EvalExample):
     if eval_example.update_examples:
         eval_example.run_print_update(example)
 
-@pytest.mark.parametrize('example', find_examples('.'))
+@pytest.mark.parametrize('example', find_examples('.'), ids=str)
 def test_b(example: CodeExample, eval_example: EvalExample):
     if eval_example.update_examples:
         eval_example.run_print_update(example)
@@ -151,12 +151,12 @@ print("example 2")
 from pytest_examples import find_examples, CodeExample, EvalExample
 import pytest
 
-@pytest.mark.parametrize('example', find_examples('.'))
+@pytest.mark.parametrize('example', find_examples('.'), ids=str)
 def test_a(example: CodeExample, eval_example: EvalExample):
     if 'example 1' in example.source:
         eval_example.run_print_update(example)
 
-@pytest.mark.parametrize('example', find_examples('.'))
+@pytest.mark.parametrize('example', find_examples('.'), ids=str)
 def test_b(example: CodeExample, eval_example: EvalExample):
     if 'example 2' in example.source:
         eval_example.run_print_update(example)
