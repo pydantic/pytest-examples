@@ -3,14 +3,6 @@
 ```py
 import string
 print([string.ascii_letters[: i + 10] for i in range(4)])
-"""
-[
-    'abcdefghij',
-    'abcdefghijk',
-    'abcdefghijkl',
-    'abcdefghijklm',
-]
-"""
 ```
 ################### OUTPUT ###################
 # this is an example
@@ -18,7 +10,22 @@ print([string.ascii_letters[: i + 10] for i in range(4)])
 ```py
 import string
 
-print([string.ascii_letters[: i + 10] for i in range(4)])
+print(
+    [
+        string.ascii_letters[
+            : i + 10
+        ]
+        for i in range(4)
+    ]
+)
+"""
+[
+    "abcdefghij",
+    "abcdefghijk",
+    "abcdefghijkl",
+    "abcdefghijklm",
+]
+"""
 ```
 ################### TEST #####################
 ```py

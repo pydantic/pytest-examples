@@ -166,4 +166,4 @@ def test_b(example: CodeExample, eval_example: EvalExample):
 
     result = pytester.runpytest('-p', 'no:pretty', '--update-examples')
     result.assert_outcomes(errors=1, passed=4)
-    assert 'RuntimeError: Cannot update the same file in separate tests!' in '\n'.join(result.outlines)
+    assert 'RuntimeError: Cannot update the same file in separate groups!' in '\n'.join(result.outlines)

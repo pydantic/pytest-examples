@@ -29,10 +29,11 @@ def find_cases():
 
 @pytest.mark.parametrize('file_path,example,output,test_code', find_cases())
 def test_cases_update(pytester: pytest.Pytester, file_path: Path, example: str, output: str, test_code: str):
-    input_file = pytester.makefile(file_path.suffix, **{file_path.stem: example})
+    input_file = pytester.makefile(file_path.suffix, **{f'case_{file_path.stem}': example})
     pytester.makepyfile(test_code)
-    result = pytester.runpytest('-p', 'no:pretty', '-v', '--update-examples', '--update-examples-disable-summary')
+    result = pytester.runpytest('-p', 'no:pretty', '-vs', '--update-examples', '--update-examples-disable-summary')
     result.assert_outcomes(passed=1)
 
     # debug(input_file.read_text(), output)
+    print(input_file.read_text())
     assert input_file.read_text() == output

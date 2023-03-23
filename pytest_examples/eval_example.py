@@ -237,6 +237,7 @@ class EvalExample:
 
     def _write_file(self, example: CodeExample) -> Path:
         python_file = self.tmp_path / f'{example.module_name}.py'
+        # python_file.parent.mkdir(exist_ok=True)
         if self.update_examples:
             # if we're in update mode, we need to always rewrite the file
             python_file.write_text(example.source)

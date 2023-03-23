@@ -124,9 +124,9 @@ x = 123
 print({i: f'i value is {i}' for i in range(3)})
 """
 {
-    0: 'i value is 0',
-    1: 'i value is 1',
-    2: 'i value is 2',
+    0: "i value is 0",
+    1: "i value is 1",
+    2: "i value is 2",
 }
 """
 ''',
@@ -148,9 +148,9 @@ if True:
     print(['x' * i * 5 for i in range(3)])
     """
     [
-        '',
-        'xxxxx',
-        'xxxxxxxxxx',
+        "",
+        "xxxxx",
+        "xxxxxxxxxx",
     ]
     """
 ''',
@@ -187,10 +187,10 @@ print(
 )
 """
 [
-    'abcdefghij',
-    'abcdefghijk',
-    'abcdefghijkl',
-    'abcdefghijklm',
+    "abcdefghij",
+    "abcdefghijk",
+    "abcdefghijkl",
+    "abcdefghijklm",
 ]
 """
 ''',
