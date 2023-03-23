@@ -44,7 +44,7 @@ class Arg:
             r = repr(self.string)
         else:
             r = self.code
-        return black_format(r, black_length)
+        return black_format(r, None, line_length=black_length)
 
 
 @dataclass

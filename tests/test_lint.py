@@ -4,6 +4,7 @@ import pytest
 from _pytest.outcomes import Failed
 
 from pytest_examples import CodeExample
+from pytest_examples.eval_example import ExamplesConfig
 from pytest_examples.lint import ruff_check
 
 long_function = 'def this_is_a_very_long_function_name_to_cause_errors(the_argument): pass'
@@ -26,7 +27,7 @@ def test_ruff(tmp_path: Path):
     p = tmp_path / 'test.py'
     p.write_text(long_function)
     example = fake_example(long_function)
-    ruff_check(example, p, ())
+    ruff_check(example, p, None)
 
 
 def test_ruff_line_length(tmp_path: Path):
@@ -34,7 +35,7 @@ def test_ruff_line_length(tmp_path: Path):
     p.write_text(long_function)
     example = fake_example(long_function, start_line=4)
     with pytest.raises(Failed) as exc_info:
-        ruff_check(example, p, line_length=40)
+        ruff_check(example, p, ExamplesConfig(line_length=40))
     assert str(exc_info.value) == (
         'ruff failed:\n  real/file.py:5:41: E501 Line too long (73 > 40 characters)\n  Found 1 error.\n'
     )
@@ -48,7 +49,7 @@ def test_ruff_config(tmp_path: Path):
     ruff_check(example, p)
 
     with pytest.raises(Failed, match='real/file.py:4:12: UP007 [*] Use `X | Y` for type annotations'):
-        ruff_check(example, p, ruff_config={'target-version': "'py311'", 'select': "['UP']"})
+        ruff_check(example, p, ExamplesConfig(target_version='py311', upgrade=True))
 
 
 def test_ruff_offset(tmp_path: Path):
@@ -56,4 +57,4 @@ def test_ruff_offset(tmp_path: Path):
     p.write_text(long_function)
     example = fake_example(long_function, start_line=10)
     with pytest.raises(Failed, match='real/file.py:11:41: E501 Line too long'):
-        ruff_check(example, p, line_length=40)
+        ruff_check(example, p, ExamplesConfig(line_length=40))

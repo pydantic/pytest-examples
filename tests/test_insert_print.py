@@ -226,7 +226,8 @@ def test_insert_print_check_unchanged(tmp_path, eval_example, python_code: str):
     # note this file is no written here as it's not required
     md_file = tmp_path / 'test.md'
     example = fake_example(md_file, python_code)
-    eval_example.run_print_check(example, line_length=30)
+    eval_example.set_config(line_length=30)
+    eval_example.run_print_check(example)
 
 
 def test_insert_print_check_change(tmp_path, eval_example):

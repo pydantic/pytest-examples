@@ -4,15 +4,17 @@ import re
 import subprocess
 from pathlib import Path
 from textwrap import indent
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import pytest
 from black import format_str as black_format_str
 from black.mode import DEFAULT_LINE_LENGTH
 from black.mode import Mode as BlackMode
+from black.mode import TargetVersion as BlackTargetVersion
 from black.output import diff as black_diff
 
 if TYPE_CHECKING:
+    from .eval_example import ExamplesConfig
     from .find_examples import CodeExample
 
 __all__ = 'ruff_check', 'ruff_format', 'black_check', 'black_format', 'code_diff', 'DEFAULT_LINE_LENGTH'
@@ -21,36 +23,25 @@ __all__ = 'ruff_check', 'ruff_format', 'black_check', 'black_format', 'code_diff
 def ruff_format(
     example: CodeExample,
     python_file: Path,
-    extra_ruff_args: tuple[str, ...] = (),
-    line_length: int = DEFAULT_LINE_LENGTH,
-    ruff_config: dict[str, Any] | None = None,
+    config: ExamplesConfig | None,
 ) -> str:
-    args = ('--fix',) + extra_ruff_args
-    ruff_check(example, python_file, args, line_length, ruff_config)
+    args = ('--fix',)
+    ruff_check(example, python_file, config, extra_ruff_args=args)
     return python_file.read_text()
 
 
 def ruff_check(
     example: CodeExample,
     python_file: Path,
+    config: ExamplesConfig | None = None,
+    *,
     extra_ruff_args: tuple[str, ...] = (),
-    line_length: int = DEFAULT_LINE_LENGTH,
-    ruff_config: dict[str, Any] | None = None,
 ) -> None:
     args = 'ruff', 'check', str(python_file), *extra_ruff_args
 
-    config_content = ''
-    if line_length is not None:
-        config_content = f'line-length = {line_length}\n'
-    if ruff_config is not None:
-        config_content += '\n'.join(f'{k} = {v}' for k, v in ruff_config.items())
-
-    if config_content:
-        if '--config' in args:
-            raise RuntimeError("Custom `--config` can't be combined with `line_length` or `ruff_config` arguments")
-        config_file = python_file.parent / 'ruff.toml'
-        config_file.write_text(config_content)
-        args += '--config', str(config_file)
+    ruff_config = to_ruff_config(config)
+    if ruff_config:
+        (python_file.parent / 'ruff.toml').write_text(ruff_config)
 
     p = subprocess.run(args, capture_output=True, text=True)
     if p.returncode == 1 and p.stdout:
@@ -65,21 +56,59 @@ def ruff_check(
         raise RuntimeError(f'Error running ruff, return code {p.returncode}:\n{p.stderr or p.stdout}')
 
 
-def black_format(source: str, line_length: int = DEFAULT_LINE_LENGTH, black_mode: BlackMode | None = None) -> str:
+def to_ruff_config(config: ExamplesConfig | None) -> str | None:
+    if config is None:
+        return None
+    config_lines = []
+    if config.line_length is not None:
+        config_lines.append(f'line-length = {config.line_length}')
+
+    select = []
+    if config.quotes == 'single':
+        # enforce single quotes using ruff, black will enforce double quotes
+        select.append('Q')
+        config_lines.append("flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}")
+
+    if config.target_version:
+        config_lines.append(f'target-version = "{config.target_version}"')
+
+    if config.upgrade:
+        select.append('UP')
+    if config.isort:
+        select.append('I')
+
+    if select:
+        config_lines.append(f'select = {select}')
+
+    if config_lines:
+        return '\n'.join(config_lines)
+
+
+def black_format(source: str, config: ExamplesConfig | None = None, line_length: int = DEFAULT_LINE_LENGTH) -> str:
     # hack to avoid black complaining about our print output format
     before_black = re.sub(r'^( *#)> ', r'\1 > ', source, flags=re.M)
-    after_black = black_format_str(before_black, mode=black_mode or BlackMode(line_length=line_length))
+    after_black = black_format_str(before_black, mode=to_black_config(config, line_length))
     # then revert it back
     return re.sub(r'^( *#) > ', r'\1> ', after_black, flags=re.M)
 
 
-def black_check(
-    example: CodeExample, line_length: int = DEFAULT_LINE_LENGTH, black_mode: BlackMode | None = None
-) -> None:
-    after_black = black_format(example.source, line_length, black_mode)
+def black_check(example: CodeExample, config: ExamplesConfig | None = None) -> None:
+    after_black = black_format(example.source, config)
     if example.source != after_black:
         diff = code_diff(example, after_black)
         pytest.fail(f'black failed:\n{indent(diff, "  ")}', pytrace=False)
+
+
+def to_black_config(config: ExamplesConfig | None, line_length: int) -> BlackMode:
+    if config is None:
+        return BlackMode(line_length=line_length)
+    else:
+        return BlackMode(
+            line_length=config.line_length,
+            target_versions={BlackTargetVersion[config.target_version.upper()]} if config.target_version else set(),
+            string_normalization=config.quotes == 'double',
+            magic_trailing_comma=config.magic_trailing_comma,
+        )
 
 
 def code_diff(example: CodeExample, after: str) -> str:
