@@ -67,6 +67,12 @@ class CodeExample:
         """
         return f'{self.path.stem}_{self.start_line}_{self.end_line}'
 
+    def in_py_file(self) -> bool:
+        """
+        Whether the example is in a Python file.
+        """
+        return self.path.suffix == '.py'
+
     def __str__(self):
         try:
             path = self.path.relative_to(Path.cwd())

@@ -110,7 +110,6 @@ class InsertPrintStatements:
         assert self.print_func is not None, 'print statements not being inserted'
 
         lines = example.source.splitlines()
-        in_python = example.path.suffix == '.py'
 
         for s in reversed(self.print_func.statements):
             line_no, col = find_print_location(example, s.line_no)
@@ -119,7 +118,7 @@ class InsertPrintStatements:
             line_index = line_no - 1
 
             remove_old_print(lines, line_index)
-            self._insert_print_args(lines, s, in_python, line_index, col)
+            self._insert_print_args(lines, s, example.in_py_file(), line_index, col)
 
         return '\n'.join(lines) + '\n'
 

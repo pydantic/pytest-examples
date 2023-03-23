@@ -81,16 +81,19 @@ def to_ruff_config(config: ExamplesConfig) -> str | None:
         return '\n'.join(config_lines)
 
 
-def black_format(source: str, config: ExamplesConfig) -> str:
+def black_format(source: str, config: ExamplesConfig, *, remove_double_blank: bool = False) -> str:
     # hack to avoid black complaining about our print output format
     before_black = re.sub(r'^( *#)> ', r'\1 > ', source, flags=re.M)
     after_black = black_format_str(before_black, mode=to_black_config(config))
     # then revert it back
-    return re.sub(r'^( *#) > ', r'\1> ', after_black, flags=re.M)
+    after_black = re.sub(r'^( *#) > ', r'\1> ', after_black, flags=re.M)
+    if remove_double_blank:
+        after_black = re.sub(r'\n{3}', '\n\n', after_black)
+    return after_black
 
 
 def black_check(example: CodeExample, config: ExamplesConfig) -> None:
-    after_black = black_format(example.source, config)
+    after_black = black_format(example.source, config, remove_double_blank=example.in_py_file())
     if example.source != after_black:
         diff = code_diff(example, after_black)
         pytest.fail(f'black failed:\n{indent(diff, "  ")}', pytrace=False)

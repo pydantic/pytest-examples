@@ -35,5 +35,5 @@ def test_cases_update(pytester: pytest.Pytester, file_path: Path, example: str, 
     result.assert_outcomes(passed=1)
 
     # debug(input_file.read_text(), output)
-    print(input_file.read_text())
+    # print(input_file.read_text())
     assert input_file.read_text() == output
