@@ -50,7 +50,7 @@ def add_two_things(a, b):
 
 And here's an example of a markdown file, again documenting `add_two_things`:
 
-````md
+````markdown
 # How `add_two_things` works
 
 ```py
