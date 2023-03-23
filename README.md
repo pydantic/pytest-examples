@@ -5,7 +5,14 @@
 [![versions](https://img.shields.io/pypi/pyversions/pytest-examples.svg)](https://github.com/pydantic/pytest-examples)
 [![license](https://img.shields.io/github/license/pydantic/pytest-examples.svg)](https://github.com/pydantic/pytest-examples/blob/main/LICENSE)
 
-Pytest plugin for testing examples in docstrings and markdown files.
+Pytest plugin for testing Python code examples in docstrings and markdown files.
+
+`pytest-examples` can:
+* lint code examples using `ruff` and `black`
+* run code examples
+* run code examples and check print statements are inlined correctly in the code
+
+It can also update code examples in place to format them and insert or update print statements.
 
 ## Installation
 
@@ -41,6 +48,7 @@ def add_two_things(a, b):
     """
     ```py
     from my_lib import add_two_things
+
     print(add_two_things(1, 2))
     #> 3
     ```
@@ -55,6 +63,7 @@ And here's an example of a markdown file, again documenting `add_two_things`:
 
 ```py
 from my_lib import add_two_things
+
 print(add_two_things(1, 2))
 #> 3
 ```
