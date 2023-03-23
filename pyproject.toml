@@ -47,6 +47,7 @@ dynamic = ['version']
 dependencies = [
     'pytest>=7',
     'black>=23',
+    'ruff>=0.0.258',
 ]
 
 [project.entry-points.pytest11]
