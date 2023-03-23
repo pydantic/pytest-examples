@@ -50,13 +50,15 @@ def add_two_things(a, b):
 
 And here's an example of a markdown file, again documenting `add_two_things`:
 
-    # How `add_two_things` works
+````md
+# How `add_two_things` works
 
-    ```py
-    from my_lib import add_two_things
-    print(add_two_things(1, 2))
-    #> 3
-    ```
+```py
+from my_lib import add_two_things
+print(add_two_things(1, 2))
+#> 3
+```
+````
 
 `pytest-examples` can then run the code and check the print statements are correct:
 
