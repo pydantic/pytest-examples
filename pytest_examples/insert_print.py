@@ -1,6 +1,7 @@
 from __future__ import annotations as _annotations
 
 import ast
+import dataclasses
 import inspect
 import re
 import sys
@@ -15,6 +16,7 @@ import pytest
 from .lint import black_format, code_diff
 
 if TYPE_CHECKING:
+    from .eval_example import ExamplesConfig
     from .find_examples import CodeExample
 
 __all__ = ('InsertPrintStatements',)
@@ -39,12 +41,12 @@ class Arg:
         else:
             return self.code
 
-    def format(self, black_length: int) -> str:
+    def format(self, config: ExamplesConfig) -> str:
         if self.string is not None:
             r = repr(self.string)
         else:
             r = self.code
-        return black_format(r, None, line_length=black_length)
+        return black_format(r, config)
 
 
 @dataclass
@@ -75,9 +77,9 @@ class MockPrintFunction:
 
 
 class InsertPrintStatements:
-    def __init__(self, python_path: Path, line_length: int, enable: bool):
+    def __init__(self, python_path: Path, config: ExamplesConfig, enable: bool):
         self.file = python_path
-        self.line_length = line_length
+        self.config = config
         self.print_func = MockPrintFunction(python_path) if enable else None
         self.patch = None
 
@@ -123,16 +125,18 @@ class InsertPrintStatements:
     ) -> None:
         single_line = statement.sep.join(map(str, statement.args))
         indent_str = ' ' * col
-        if len(single_line) < self.line_length - len(indent_str) - len(comment_prefix):
+        if len(single_line) < self.config.line_length - len(indent_str) - len(comment_prefix):
             lines.insert(line_index + 1, f'{indent_str}{comment_prefix}{single_line}')
         else:
             # if the statement is too long to go on one line, print each arg on its own line formatted with black
             sep = f'{statement.sep}\n'
-            black_length = self.line_length - len(indent_str)
-            output = sep.join(arg.format(black_length) for arg in statement.args)
+            indent_config = dataclasses.replace(self.config, line_length=self.config.line_length - len(indent_str))
+            output = sep.join(arg.format(indent_config).strip('\n') for arg in statement.args)
+            # remove trailing whitespace
+            output = re.sub(r' +$', '', output, flags=re.MULTILINE)
             # have to use triple single quotes in python since we're already in a double quotes docstring
             quote = "'''" if in_python else '"""'
-            lines.insert(line_index + 1, indent(f'{quote}\n{output}{quote}', indent_str))
+            lines.insert(line_index + 1, indent(f'{quote}\n{output}\n{quote}', indent_str))
 
 
 comment_prefix = '#> '

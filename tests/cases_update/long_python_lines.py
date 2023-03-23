@@ -11,15 +11,15 @@ def foobar():
     ```py
     print(
         {
-            i: "x" * (5 * i)
+            i: 'x' * (5 * i)
             for i in range(3)
         }
     )
     '''
     {
-        0: "",
-        1: "xxxxx",
-        2: "xxxxxxxxxx",
+        0: '',
+        1: 'xxxxx',
+        2: 'xxxxxxxxxx',
     }
     '''
     ```

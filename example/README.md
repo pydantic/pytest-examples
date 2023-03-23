@@ -2,18 +2,25 @@
 
 ```py
 x = 123
-print('this is an example of how pytest-examples is used', x, [1, 2, 3])
+print(
+    'this is an example of how pytest-examples is used',
+    x,
+    [1, 2, 3],
+)
 """
 'this is an example of how pytest-examples is used'
-
 123
-
 [1, 2, 3]
 """
 
 # something more complex
 if True:
-    print({i: f'this is {i}' for i in range(10)})
+    print(
+        {
+            i: f'this is {i}'
+            for i in range(10)
+        }
+    )
     """
     {
         0: 'this is 0',
@@ -33,7 +40,9 @@ if True:
 # Another example
 
 ```py
-print('this is another example')
+print(
+    'this is another example'
+)
 #> this is another example
 ```
 

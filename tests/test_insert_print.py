@@ -127,9 +127,9 @@ x = 123
 print({i: f'i value is {i}' for i in range(3)})
 """
 {
-    0: "i value is 0",
-    1: "i value is 1",
-    2: "i value is 2",
+    0: 'i value is 0',
+    1: 'i value is 1',
+    2: 'i value is 2',
 }
 """
 ''',
@@ -148,12 +148,12 @@ if True:
         # language=Python
         '''\
 if True:
-    print(['x' * i * 5 for i in range(3)])
+    print(['x' * i * 8 for i in range(3)])
     """
     [
-        "",
-        "xxxxx",
-        "xxxxxxxxxx",
+        '',
+        'xxxxxxxx',
+        'xxxxxxxxxxxxxxxx',
     ]
     """
 ''',
@@ -190,10 +190,10 @@ print(
 )
 """
 [
-    "abcdefghij",
-    "abcdefghijk",
-    "abcdefghijkl",
-    "abcdefghijklm",
+    'abcdefghij',
+    'abcdefghijk',
+    'abcdefghijkl',
+    'abcdefghijklm',
 ]
 """
 ''',
@@ -217,6 +217,29 @@ print(
 #> 1 2 3
 """,
         id='ill-formed-print-2',
+    ),
+    pytest.param(
+        # language=Python
+        '''\
+if True:
+    if True:
+        if True:
+            print([1, 2, 3, 4])
+            #> [1, 2, 3, 4]
+            print([1, 2, 3, 4, 5])
+            """
+            [1, 2, 3, 4, 5]
+            """
+            print([1_000_000, 2_000_000, 3_000_000])
+            """
+            [
+                1000000,
+                2000000,
+                3000000,
+            ]
+            """
+''',
+        id='big-indent',
     ),
 ]
 

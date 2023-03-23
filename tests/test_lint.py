@@ -27,7 +27,7 @@ def test_ruff(tmp_path: Path):
     p = tmp_path / 'test.py'
     p.write_text(long_function)
     example = fake_example(long_function)
-    ruff_check(example, p, None)
+    ruff_check(example, p, ExamplesConfig())
 
 
 def test_ruff_line_length(tmp_path: Path):
@@ -46,7 +46,7 @@ def test_ruff_config(tmp_path: Path):
     code = 'from typing import Union\n\n\ndef foo(x: Union[int, str]):\n    pass\n'
     p.write_text(code)
     example = fake_example(code)
-    ruff_check(example, p)
+    ruff_check(example, p, ExamplesConfig())
 
     with pytest.raises(Failed, match='real/file.py:4:12: UP007 [*] Use `X | Y` for type annotations'):
         ruff_check(example, p, ExamplesConfig(target_version='py311', upgrade=True))

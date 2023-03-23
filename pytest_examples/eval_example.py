@@ -23,7 +23,7 @@ __all__ = 'EvalExample', 'ExamplesConfig'
 @dataclass
 class ExamplesConfig:
     line_length: int = DEFAULT_LINE_LENGTH
-    quotes: Literal['single', 'double'] = 'double'
+    quotes: Literal['single', 'double', 'either'] = 'either'
     magic_trailing_comma: bool = True
     target_version: Literal['py37', 'py38', 'py39', 'py310', 'py311'] = 'py37'
     upgrade: bool = False
@@ -40,13 +40,13 @@ class EvalExample:
         self._pytest_config = pytest_request.config
         self._test_id = pytest_request.node.nodeid
         self.to_update: list[CodeExample] = []
-        self.config: ExamplesConfig | None = None
+        self.config: ExamplesConfig = ExamplesConfig()
 
     def set_config(
         self,
         *,
         line_length: int = DEFAULT_LINE_LENGTH,
-        quotes: Literal['single', 'double'] = 'double',
+        quotes: Literal['single', 'double', 'either'] = 'either',
         magic_trailing_comma: bool = True,
         target_version: Literal['py37', 'py38', 'py39', 'py310', 'py310'] = 'py37',
         upgrade: bool = False,
@@ -55,7 +55,7 @@ class EvalExample:
         Set the config for lints
 
         :param line_length: The line length to use when wrapping print statements, defaults to 88.
-        :param quotes: The quote to use, defaults to "double".
+        :param quotes: The quote to use, defaults to "either".
         :param magic_trailing_comma: If True, add a trailing comma to magic methods, defaults to True.
         :param target_version: The target version to use when upgrading code, defaults to "py37".
         :param upgrade: If True, upgrade the code to the target version, defaults to False.
@@ -147,8 +147,7 @@ class EvalExample:
             enable_print_mock = False
 
         # does nothing if insert_print_statements is False
-        line_length = self.config.line_length if self.config else DEFAULT_LINE_LENGTH
-        insert_print = InsertPrintStatements(python_file, line_length, enable_print_mock)
+        insert_print = InsertPrintStatements(python_file, self.config, enable_print_mock)
 
         try:
             with insert_print:

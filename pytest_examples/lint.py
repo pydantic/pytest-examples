@@ -33,15 +33,14 @@ def ruff_format(
 def ruff_check(
     example: CodeExample,
     python_file: Path,
-    config: ExamplesConfig | None = None,
+    config: ExamplesConfig,
     *,
     extra_ruff_args: tuple[str, ...] = (),
 ) -> None:
     args = 'ruff', 'check', str(python_file), *extra_ruff_args
 
     ruff_config = to_ruff_config(config)
-    if ruff_config:
-        (python_file.parent / 'ruff.toml').write_text(ruff_config)
+    (python_file.parent / 'ruff.toml').write_text(ruff_config)
 
     p = subprocess.run(args, capture_output=True, text=True)
     if p.returncode == 1 and p.stdout:
@@ -56,12 +55,8 @@ def ruff_check(
         raise RuntimeError(f'Error running ruff, return code {p.returncode}:\n{p.stderr or p.stdout}')
 
 
-def to_ruff_config(config: ExamplesConfig | None) -> str | None:
-    if config is None:
-        return None
-    config_lines = []
-    if config.line_length is not None:
-        config_lines.append(f'line-length = {config.line_length}')
+def to_ruff_config(config: ExamplesConfig) -> str:
+    config_lines = [f'line-length = {config.line_length}']
 
     select = []
     if config.quotes == 'single':
@@ -80,35 +75,31 @@ def to_ruff_config(config: ExamplesConfig | None) -> str | None:
     if select:
         config_lines.append(f'select = {select}')
 
-    if config_lines:
-        return '\n'.join(config_lines)
+    return '\n'.join(config_lines)
 
 
-def black_format(source: str, config: ExamplesConfig | None = None, line_length: int = DEFAULT_LINE_LENGTH) -> str:
+def black_format(source: str, config: ExamplesConfig) -> str:
     # hack to avoid black complaining about our print output format
     before_black = re.sub(r'^( *#)> ', r'\1 > ', source, flags=re.M)
-    after_black = black_format_str(before_black, mode=to_black_config(config, line_length))
+    after_black = black_format_str(before_black, mode=to_black_config(config))
     # then revert it back
     return re.sub(r'^( *#) > ', r'\1> ', after_black, flags=re.M)
 
 
-def black_check(example: CodeExample, config: ExamplesConfig | None = None) -> None:
+def black_check(example: CodeExample, config: ExamplesConfig) -> None:
     after_black = black_format(example.source, config)
     if example.source != after_black:
         diff = code_diff(example, after_black)
         pytest.fail(f'black failed:\n{indent(diff, "  ")}', pytrace=False)
 
 
-def to_black_config(config: ExamplesConfig | None, line_length: int) -> BlackMode:
-    if config is None:
-        return BlackMode(line_length=line_length)
-    else:
-        return BlackMode(
-            line_length=config.line_length,
-            target_versions={BlackTargetVersion[config.target_version.upper()]} if config.target_version else set(),
-            string_normalization=config.quotes == 'double',
-            magic_trailing_comma=config.magic_trailing_comma,
-        )
+def to_black_config(config: ExamplesConfig) -> BlackMode:
+    return BlackMode(
+        line_length=config.line_length,
+        target_versions={BlackTargetVersion[config.target_version.upper()]} if config.target_version else set(),
+        string_normalization=config.quotes == 'double',
+        magic_trailing_comma=config.magic_trailing_comma,
+    )
 
 
 def code_diff(example: CodeExample, after: str) -> str:

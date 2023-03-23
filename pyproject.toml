@@ -56,7 +56,7 @@ examples = 'pytest_examples'
 repository = 'https://github.com/pydantic/pytest-examples'
 
 [tool.pytest.ini_options]
-testpaths = 'tests'
+testpaths = ['tests', 'example']
 filterwarnings = 'error'
 xfail_strict = true
 
