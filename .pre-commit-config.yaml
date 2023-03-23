@@ -12,10 +12,13 @@ repos:
   - id: ruff
     name: Ruff
     entry: ruff
+    args: [--fix, --exit-non-zero-on-fix]
     types: [python]
     language: system
+    exclude: cases_update
   - id: black
     name: Black
     entry: black
     types: [python]
     language: system
+    exclude: cases_update

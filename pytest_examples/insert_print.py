@@ -1,5 +1,6 @@
 from __future__ import annotations as _annotations
 
+import ast
 import inspect
 import re
 import sys
@@ -21,11 +22,42 @@ __all__ = ('InsertPrintStatements',)
 parent_frame_id = 4 if sys.version_info >= (3, 8) else 3
 
 
+@dataclass(init=False)
+class Arg:
+    string: str | None = None
+    code: str | None = None
+
+    def __init__(self, v: Any):
+        if isinstance(v, str):
+            self.string = v
+        else:
+            self.code = str(v)
+
+    def __str__(self) -> str:
+        if self.string is not None:
+            return self.string
+        else:
+            return self.code
+
+    def format(self, black_length: int) -> str:
+        if self.string is not None:
+            r = repr(self.string)
+        else:
+            r = self.code
+        return black_format(r, black_length)
+
+
 @dataclass
 class PrintStatement:
     line_no: int
     sep: str
-    args: list[str]
+    args: list[Arg]
+
+
+def not_print(*args):
+    import sys
+
+    sys.stdout.write(' '.join(map(str, args)) + '\n')
 
 
 class MockPrintFunction:
@@ -38,15 +70,15 @@ class MockPrintFunction:
 
         if self.file.samefile(frame.filename):
             # -1 to account for the line number being 1-indexed
-            s = PrintStatement(frame.lineno - 1, sep, [str(arg) for arg in args])
+            s = PrintStatement(frame.lineno, sep, [Arg(arg) for arg in args])
             self.statements.append(s)
 
 
 class InsertPrintStatements:
-    def __init__(self, python_path: Path, line_length: int, insert_print_statements: bool):
+    def __init__(self, python_path: Path, line_length: int, enable: bool):
         self.file = python_path
         self.line_length = line_length
-        self.print_func = MockPrintFunction(python_path) if insert_print_statements else None
+        self.print_func = MockPrintFunction(python_path) if enable else None
         self.patch = None
 
     def __enter__(self) -> None:
@@ -58,72 +90,172 @@ class InsertPrintStatements:
         if self.patch is not None:
             self.patch.stop()
 
-    def check_print_statements(self, example: CodeExample):
+    def check_print_statements(self, example: CodeExample) -> None:
         with_prints = self._insert_print_statements(example)
         if example.source != with_prints:
             diff = code_diff(example, with_prints)
             pytest.fail(f'Print output changed code:\n{indent(diff, "  ")}', pytrace=False)
 
+    def updated_print_statements(self, example: CodeExample) -> str | None:
+        with_prints = self._insert_print_statements(example)
+        if example.source != with_prints:
+            return with_prints
+
     def _insert_print_statements(self, example: CodeExample) -> str:
         assert self.print_func is not None, 'print statements not being inserted'
 
         lines = example.source.splitlines()
+        in_python = example.path.suffix == '.py'
 
         for s in reversed(self.print_func.statements):
-            remove_old_print(lines, s.line_no)
-            indent = find_print_indent(lines, s.line_no)
-            self._insert_print_args(lines, s, indent)
+            line_no, col = find_print_location(example, s.line_no)
+
+            # switch from 1-indexed line number to 0-indexed indexes into lines
+            line_index = line_no - 1
+
+            remove_old_print(lines, line_index)
+            self._insert_print_args(lines, s, in_python, line_index, col)
 
         return '\n'.join(lines) + '\n'
 
-    def _insert_print_args(self, lines: list[str], statement: PrintStatement, indent_str: str) -> None:
-        single_line = statement.sep.join(statement.args)
+    def _insert_print_args(
+        self, lines: list[str], statement: PrintStatement, in_python: bool, line_index: int, col: int
+    ) -> None:
+        single_line = statement.sep.join(map(str, statement.args))
+        indent_str = ' ' * col
         if len(single_line) < self.line_length - len(indent_str) - len(comment_prefix):
-            lines.insert(statement.line_no + 1, f'{indent_str}{comment_prefix}{single_line}')
+            lines.insert(line_index + 1, f'{indent_str}{comment_prefix}{single_line}')
         else:
             # if the statement is too long to go on one line, print each arg on its own line formatted with black
             sep = f'{statement.sep}\n'
             black_length = self.line_length - len(indent_str)
-            output = sep.join(black_format(arg, black_length) for arg in statement.args)
-            lines.insert(statement.line_no + 1, indent(f'"""\n{output}"""', indent_str))
+            output = sep.join(arg.format(black_length) for arg in statement.args)
+            # have to use triple single quotes in python since we're already in a double quotes docstring
+            quote = "'''" if in_python else '"""'
+            lines.insert(line_index + 1, indent(f'{quote}\n{output}{quote}', indent_str))
 
 
 comment_prefix = '#> '
 comment_prefix_re = re.compile(f'^ *{re.escape(comment_prefix)}', re.MULTILINE)
-triple_quotes_prefix = re.compile('^ *"""', re.MULTILINE)
+triple_quotes_prefix_re = re.compile('^ *(?:"{3}|\'{3})', re.MULTILINE)
 
 
-def remove_old_print(lines: list[str], line_no: int) -> None:
+def find_print_line(lines: list[str], line_no: int) -> int:
+    """
+    For 3.7 we have to reverse through lines to find the print statement lint
+    """
+    if sys.version_info >= (3, 8):
+        return line_no
+
+    for back in range(100):
+        new_line_no = line_no - back
+        m = re.search(r'^ *print\(', lines[new_line_no - 1])
+        if m:
+            return new_line_no
+    return line_no
+
+
+def remove_old_print(lines: list[str], line_index: int) -> None:
     """
     Remove the old print statement.
     """
     try:
-        next_line = lines[line_no + 1]
+        next_line = lines[line_index + 1]
     except IndexError:
         # end of file
         return
 
-    if triple_quotes_prefix.search(next_line):
+    if triple_quotes_prefix_re.search(next_line):
         for i in range(2, 100):
-            if triple_quotes_prefix.search(lines[line_no + i]):
-                del lines[line_no + 1 : line_no + i + 1]
+            if triple_quotes_prefix_re.search(lines[line_index + i]):
+                del lines[line_index + 1 : line_index + i + 1]
                 return
         raise ValueError('Could not find end of triple quotes')
     else:
         try:
-            while comment_prefix_re.search(lines[line_no + 1]):
-                del lines[line_no + 1]
+            while comment_prefix_re.search(lines[line_index + 1]):
+                del lines[line_index + 1]
         except IndexError:
             # end of file
             pass
 
 
-def find_print_indent(lines: list[str], line_no: int) -> str:
+def find_print_location(example: CodeExample, line_no: int) -> tuple[int, int]:
     """
-    Look back through recent lines to find the "print(" function and return its indentation.
+    Find the line and column of the print statement.
+
+    :param example: the `CodeExample`
+    :param line_no: The line number on which the print statement starts (or approx on 3.7)
+    :return: tuple if `(line, column)` of the print statement
     """
-    for back in range(100):
-        m = re.search(r'^( *)print\(', lines[line_no - back])
-        if m:
-            return m.group(1)
-    return ''
+    # For 3.7 we have to reverse through lines to find the print statement lint
+    if sys.version_info < (3, 8):
+        # find the last print statement before the line
+        lines = example.source.splitlines()
+        for back in range(100):
+            new_line_no = line_no - back
+            m = re.match(r' *print\(', lines[new_line_no - 1])
+            if m:
+                line_no = new_line_no
+                break
+
+    m = ast.parse(example.source, filename=example.path.name)
+    return find_print(m, line_no) or (line_no, 0)
+
+
+def find_print(node: Any, line: int) -> tuple[int, int] | None:
+    if isinstance(node, (ast.Module, ast.FunctionDef, ast.If)):
+        found_loc = find_print_in_body(node.body, line)
+        if found_loc is not None:
+            return found_loc
+        if isinstance(node, ast.If):
+            found_loc = find_print_in_body(node.orelse, line)
+            if found_loc is not None:
+                return found_loc
+    elif isinstance(node, ast.Expr):
+        return find_print(node.value, line)
+    elif isinstance(node, ast.Call):
+        if node.func.id == 'print' and node.lineno == line:
+            return expr_last_line(node), node.col_offset
+        return find_print(node.func, line)
+
+
+def find_print_in_body(body: list[ast.stmt], line: int) -> tuple[int, int] | None:
+    for node in body:
+        found_loc = find_print(node, line)
+        if found_loc is not None:
+            return found_loc
+
+
+def expr_last_line(c: ast.expr) -> int:
+    if isinstance(c, ast.Constant):
+        return c.lineno
+    if isinstance(c, ast.Call):
+        if c.keywords:
+            return maybe_plus_1(c, expr_last_line(c.keywords[-1].value))
+        elif c.args:
+            return maybe_plus_1(c, expr_last_line(c.args[-1]))
+        else:
+            return c.lineno
+    elif isinstance(c, (ast.List, ast.Tuple, ast.Set)):
+        if c.elts:
+            return maybe_plus_1(c, expr_last_line(c.elts[-1]))
+        else:
+            return c.lineno
+    elif isinstance(c, (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)):
+        gen = c.generators[-1]
+        if gen.ifs:
+            return maybe_plus_1(c, expr_last_line(gen.ifs[-1]))
+        else:
+            return maybe_plus_1(c, expr_last_line(gen.iter))
+    else:
+        return c.lineno
+
+
+def maybe_plus_1(c: ast.expr, last_arg_line: int) -> int:
+    if c.lineno == last_arg_line:
+        # all args are on the same line, assume the basic `print(x, y)` case
+        return c.lineno
+    else:
+        # args are on multiple lines, assume the following format an extra line with `)`
+        return last_arg_line + 1

@@ -3,7 +3,13 @@
 ```py
 x = 123
 print('this is an example of how pytest-examples is used', x, [1, 2, 3])
-#> this is an example of how pytest-examples is used 123 [1, 2, 3])
+"""
+'this is an example of how pytest-examples is used'
+
+123
+
+[1, 2, 3]
+"""
 
 # something more complex
 if True:
@@ -22,4 +28,39 @@ if True:
         9: 'this is 9',
     }
     """
+```
+
+# Another example
+
+```py
+print('this is another example')
+#> this is another example
+```
+
+# And another
+
+```py
+print(b'hello world')
+#> b'hello world'
+```
+
+```py
+import string
+
+print(
+    [
+        string.ascii_letters[
+            : i + 10
+        ]
+        for i in range(4)
+    ]
+)
+"""
+[
+    'abcdefghij',
+    'abcdefghijk',
+    'abcdefghijkl',
+    'abcdefghijklm',
+]
+"""
 ```
