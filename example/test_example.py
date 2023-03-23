@@ -12,7 +12,7 @@ def test_will_error(example: CodeExample, eval_example: EvalExample):
 
 @pytest.mark.parametrize('example', find_examples('example/README.md'))
 def test_insert_print(example: CodeExample, eval_example: EvalExample):
-    eval_example.set_config(line_length=30, quotes='single')
+    eval_example.set_config(line_length=50)
     if eval_example.update_examples:
         eval_example.format_black(example)
         eval_example.run_print_update(example)
@@ -30,6 +30,5 @@ def test_python_self(example: CodeExample, eval_example: EvalExample):
     #> this is introspection!
     ```
     """
-    eval_example.set_config(quotes='single')
     eval_example.lint(example)
     eval_example.run_print_check(example)

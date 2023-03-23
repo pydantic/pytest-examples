@@ -15,12 +15,7 @@ print(
 
 # something more complex
 if True:
-    print(
-        {
-            i: f'this is {i}'
-            for i in range(10)
-        }
-    )
+    print({i: f'this is {i}' for i in range(10)})
     """
     {
         0: 'this is 0',
@@ -40,9 +35,7 @@ if True:
 # Another example
 
 ```py
-print(
-    'this is another example'
-)
+print('this is another example')
 #> this is another example
 ```
 
@@ -58,9 +51,7 @@ import string
 
 print(
     [
-        string.ascii_letters[
-            : i + 10
-        ]
+        string.ascii_letters[: i + 10]
         for i in range(4)
     ]
 )
