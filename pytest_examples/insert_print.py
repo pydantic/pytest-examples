@@ -43,10 +43,9 @@ class Arg:
 
     def format(self, config: ExamplesConfig) -> str:
         if self.string is not None:
-            r = repr(self.string)
+            return self.string
         else:
-            r = self.code
-        return black_format(r, config)
+            return black_format(self.code, config)
 
 
 @dataclass
@@ -125,12 +124,13 @@ class InsertPrintStatements:
     ) -> None:
         single_line = statement.sep.join(map(str, statement.args))
         indent_str = ' ' * col
-        if len(single_line) < self.config.line_length - len(indent_str) - len(comment_prefix):
+        max_single_length = self.config.line_length - len(indent_str)
+        if '\n' not in single_line and len(single_line) + len(comment_prefix) < max_single_length:
             lines.insert(line_index + 1, f'{indent_str}{comment_prefix}{single_line}')
         else:
             # if the statement is too long to go on one line, print each arg on its own line formatted with black
             sep = f'{statement.sep}\n'
-            indent_config = dataclasses.replace(self.config, line_length=self.config.line_length - len(indent_str))
+            indent_config = dataclasses.replace(self.config, line_length=max_single_length)
             output = sep.join(arg.format(indent_config).strip('\n') for arg in statement.args)
             # remove trailing whitespace
             output = re.sub(r' +$', '', output, flags=re.MULTILINE)

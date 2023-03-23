@@ -1,7 +1,5 @@
 from __future__ import annotations as _annotations
 
-from pathlib import Path
-
 import pytest
 from _pytest.outcomes import Failed
 
@@ -94,12 +92,6 @@ print(
 def test_find_end_of_print(python_code: str, print_line: int, expected_last_loc: tuple[int, int]):
     last_loc = find_print_location(CodeExample.create(python_code), print_line)
     assert last_loc == expected_last_loc
-
-
-def fake_example(path: Path, code: str, start_line: int = 0) -> CodeExample:
-    return CodeExample(
-        path, start_line=start_line, end_index=0, start_index=0, end_line=0, prefix='', source=code, indent=0
-    )
 
 
 # separate list to hopefully make it easier to read
@@ -241,6 +233,16 @@ if True:
 ''',
         id='big-indent',
     ),
+    pytest.param(
+        '''\
+print('this is not\\npython code')
+"""
+this is not
+python code
+"""
+''',
+        id='not python code',
+    ),
 ]
 
 
@@ -248,7 +250,7 @@ if True:
 def test_insert_print_check_unchanged(tmp_path, eval_example, python_code: str):
     # note this file is no written here as it's not required
     md_file = tmp_path / 'test.md'
-    example = fake_example(md_file, python_code)
+    example = CodeExample.create(python_code, path=md_file)
     eval_example.set_config(line_length=30)
     eval_example.run_print_check(example)
 
@@ -259,7 +261,7 @@ def test_insert_print_check_change(tmp_path, eval_example):
 
     # note this file is no written here as it's not required
     md_file = tmp_path / 'test.md'
-    example = fake_example(md_file, python_code, start_line=3)
+    example = CodeExample.create(python_code, path=md_file, start_line=3)
 
     with pytest.raises(Failed) as exc_info:
         eval_example.run_print_check(example)

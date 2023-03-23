@@ -40,7 +40,8 @@ def ruff_check(
     args = 'ruff', 'check', str(python_file), *extra_ruff_args
 
     ruff_config = to_ruff_config(config)
-    (python_file.parent / 'ruff.toml').write_text(ruff_config)
+    if ruff_config:
+        (python_file.parent / 'ruff.toml').write_text(ruff_config)
 
     p = subprocess.run(args, capture_output=True, text=True)
     if p.returncode == 1 and p.stdout:
@@ -55,8 +56,9 @@ def ruff_check(
         raise RuntimeError(f'Error running ruff, return code {p.returncode}:\n{p.stderr or p.stdout}')
 
 
-def to_ruff_config(config: ExamplesConfig) -> str:
-    config_lines = [f'line-length = {config.line_length}']
+def to_ruff_config(config: ExamplesConfig) -> str | None:
+    config_lines = []
+    # line length is enforced by black
 
     select = []
     if config.quotes == 'single':
@@ -75,7 +77,8 @@ def to_ruff_config(config: ExamplesConfig) -> str:
     if select:
         config_lines.append(f'select = {select}')
 
-    return '\n'.join(config_lines)
+    if config_lines:
+        return '\n'.join(config_lines)
 
 
 def black_format(source: str, config: ExamplesConfig) -> str:

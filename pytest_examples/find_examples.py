@@ -44,7 +44,7 @@ class CodeExample:
         source: str,
         *,
         path: Path = Path('testing.md'),
-        start_line: int = 1,
+        start_line: int = 0,
         end_line: int | None = None,
         start_index: int = 0,
         end_index: int | None = None,

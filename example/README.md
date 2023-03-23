@@ -8,7 +8,7 @@ print(
     [1, 2, 3],
 )
 """
-'this is an example of how pytest-examples is used'
+this is an example of how pytest-examples is used
 123
 [1, 2, 3]
 """
