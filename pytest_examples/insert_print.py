@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
+from black import InvalidInput
 
 from .lint import black_format, code_diff
 
@@ -45,7 +46,10 @@ class Arg:
         if self.string is not None:
             return self.string
         else:
-            return black_format(self.code, config)
+            try:
+                return black_format(self.code, config)
+            except InvalidInput:
+                return self.code
 
 
 @dataclass

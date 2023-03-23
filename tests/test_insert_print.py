@@ -241,7 +241,24 @@ this is not
 python code
 """
 ''',
-        id='not python code',
+        id='not-python-code',
+    ),
+    pytest.param(
+        """\
+print(ValueError('this is not python code'))
+#> this is not python code
+""",
+        id='non-python-repr',
+    ),
+    pytest.param(
+        '''\
+print(ValueError('this is not\\npython code'))
+"""
+this is not
+python code
+"""
+''',
+        id='non-python-repr',
     ),
 ]
 
