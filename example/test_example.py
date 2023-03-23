@@ -14,7 +14,7 @@ def test_will_error(example: CodeExample, eval_example: EvalExample):
 def test_insert_print(example: CodeExample, eval_example: EvalExample):
     eval_example.set_config(line_length=50)
     if eval_example.update_examples:
-        eval_example.format_black(example)
+        eval_example.format(example)
         eval_example.run_print_update(example)
     else:
         eval_example.lint(example)
