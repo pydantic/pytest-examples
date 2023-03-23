@@ -1,4 +1,3 @@
-################### EXAMPLE ##################
 # this is an example
 
 ```py

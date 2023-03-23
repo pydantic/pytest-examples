@@ -36,6 +36,28 @@ class CodeExample:
     test_id: str | None = None
     """ID of the test this example was generated for."""
 
+    @classmethod
+    def create(
+        cls,
+        source: str,
+        *,
+        path: Path = Path('testing.md'),
+        start_line: int = 1,
+        end_line: int | None = None,
+        start_index: int = 0,
+        end_index: int | None = None,
+        prefix: str = '',
+        indent: int = 0,
+    ):
+        """
+        Create a `CodeExample`, mostly for testing.
+        """
+        if end_line is None:
+            end_line = start_line + source.count('\n')
+        if end_index is None:
+            end_index = start_index + len(source)
+        return cls(path, start_line, end_line, start_index, end_index, prefix, source, indent)
+
     @property
     def module_name(self) -> str:
         """

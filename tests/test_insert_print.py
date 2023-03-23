@@ -4,6 +4,93 @@ import pytest
 from _pytest.outcomes import Failed
 
 from pytest_examples import CodeExample
+from pytest_examples.insert_print import find_print_location
+
+# separate list to hopefully make it easier to read
+print_last_lines = [
+    pytest.param(
+        """\
+print(1, 2, [3, 4, 5], "hello")
+""",
+        1,
+        (1, 0),
+        id='simple case',
+    ),
+    pytest.param(
+        """\
+print(1, 2, [3, 4, 5], "hello")
+x = 123
+""",
+        1,
+        (1, 0),
+        id='content after print output',
+    ),
+    pytest.param(
+        """\
+if True:
+    print((1, 2, 3))
+""",
+        2,
+        (2, 4),
+        id='single-line-indent',
+    ),
+    pytest.param(
+        """\
+def foobar():
+    a = 4
+    if True:
+        print(
+            1,
+            2,
+            3
+        )
+x=4
+foobar()
+""",
+        4,
+        (8, 8),
+        id='print-over-lines',
+    ),
+    pytest.param(
+        """\
+import string
+print(
+    [
+        string.ascii_letters[
+            : i + 10
+        ]
+        for i in range(4)
+    ]
+)
+""",
+        2,
+        (9, 0),
+        id='multiline-comprehension',
+    ),
+    pytest.param(
+        """\
+print(1, 2, 3
+    )
+""",
+        1,
+        (1, 0),
+        id='ill-formed-print-1',
+    ),
+    pytest.param(
+        """\
+print(
+    1, 2, 3)
+""",
+        1,
+        (3, 0),
+        id='ill-formed-print-2',
+    ),
+]
+
+
+@pytest.mark.parametrize('python_code,print_line,expected_last_line', print_last_lines)
+def test_find_end_of_print(python_code: str, print_line: int, expected_last_line: tuple[int, int]):
+    assert find_print_location(CodeExample.create(python_code), print_line) == expected_last_line
 
 
 def fake_example(path: Path, code: str, start_line: int = 0) -> CodeExample:
@@ -69,11 +156,70 @@ if True:
 ''',
         id='multi-line-indent',
     ),
+    pytest.param(
+        # language=Python
+        """\
+def foobar():
+    a = 4
+    if True:
+        print(
+            1,
+            2,
+            3
+        )
+        #> 1 2 3
+x=4
+foobar()
+""",
+        id='print-over-lines',
+    ),
+    pytest.param(
+        # language=Python
+        '''\
+import string
+print(
+    [
+        string.ascii_letters[
+            : i + 10
+        ]
+        for i in range(4)
+    ]
+)
+"""
+[
+    'abcdefghij',
+    'abcdefghijk',
+    'abcdefghijkl',
+    'abcdefghijklm',
+]
+"""
+''',
+        id='multiline-comprehension',
+    ),
+    pytest.param(
+        # language=Python
+        """\
+print(1, 2, 3
+#> 1 2 3
+    )
+""",
+        id='ill-formed-print-1',
+    ),
+    pytest.param(
+        # language=Python
+        """\
+print(
+    1, 2, 3)
+#> 1 2 3
+#> 1 2 3
+""",
+        id='ill-formed-print-2',
+    ),
 ]
 
 
 @pytest.mark.parametrize('python_code', unchanged_code)
-def test_insert_print_check_unchanged(tmp_path, eval_example, python_code):
+def test_insert_print_check_unchanged(tmp_path, eval_example, python_code: str):
     # note this file is no written here as it's not required
     md_file = tmp_path / 'test.md'
     example = fake_example(md_file, python_code)

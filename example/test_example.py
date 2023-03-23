@@ -13,7 +13,7 @@ def test_will_error(example: CodeExample, eval_example: EvalExample):
 @pytest.mark.parametrize('example', find_examples('example/README.md'))
 def test_insert_print(example: CodeExample, eval_example: EvalExample):
     if eval_example.update_examples:
-        eval_example.format(example, line_length=30)
+        eval_example.format_black(example, line_length=30)
         eval_example.run_print_update(example, line_length=30)
     else:
         eval_example.lint(example, line_length=30)

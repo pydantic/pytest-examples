@@ -11,7 +11,7 @@ def find_cases():
             continue
         if f.suffix in {'.py', '.md'}:
             content = f.read_text()
-            m = re.search(r'^#{5,}\s*example\s*#{5,}\n(.+?)^#{5,}', content, flags=re.M | re.I | re.S)
+            m = re.search(r'(.+?)^#{5,}', content, flags=re.M | re.I | re.S)
             assert m, f'No EXAMPLE match found for {f}'
             example = m.group(1).strip('\n')
             m = re.search(r'^#{5,}\s*output\s*#{5,}\n(.+?)^#{5,}', content, flags=re.M | re.I | re.S)
