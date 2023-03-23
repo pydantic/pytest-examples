@@ -211,8 +211,12 @@ def find_print_location(example: CodeExample, line_no: int) -> tuple[int, int]:
     return find_print(m, line_no) or (line_no, 0)
 
 
+# ast nodes that have a body
+with_body = ast.Module, ast.FunctionDef, ast.If, ast.Try, ast.ExceptHandler, ast.With, ast.For, ast.AsyncFor, ast.While
+
+
 def find_print(node: Any, line: int) -> tuple[int, int] | None:
-    if isinstance(node, (ast.Module, ast.FunctionDef, ast.If)):
+    if isinstance(node, with_body):
         found_loc = find_print_in_body(node.body, line)
         if found_loc is not None:
             return found_loc
@@ -220,10 +224,15 @@ def find_print(node: Any, line: int) -> tuple[int, int] | None:
             found_loc = find_print_in_body(node.orelse, line)
             if found_loc is not None:
                 return found_loc
+        elif isinstance(node, ast.Try):
+            for node in node.handlers:
+                found_loc = find_print(node, line)
+                if found_loc is not None:
+                    return found_loc
     elif isinstance(node, ast.Expr):
         return find_print(node.value, line)
     elif isinstance(node, ast.Call):
-        if node.func.id == 'print' and node.lineno == line:
+        if isinstance(node.func, ast.Name) and node.func.id == 'print' and node.lineno == line:
             return expr_last_line(node), node.col_offset
         return find_print(node.func, line)
 

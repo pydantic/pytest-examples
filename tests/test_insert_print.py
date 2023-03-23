@@ -85,6 +85,27 @@ print(
         (3, 0),
         id='ill-formed-print-2',
     ),
+    pytest.param(
+        """\
+try:
+    raise ValueError('boom')
+except ValueError as e:
+    print(e)
+    #> boom
+""",
+        4,
+        (4, 4),
+        id='try-except',
+    ),
+    pytest.param(
+        """\
+a.b.c(1, 2, 3)
+print(4)
+""",
+        2,
+        (2, 0),
+        id='call-attribute',
+    ),
 ]
 
 
@@ -259,6 +280,16 @@ python code
 """
 ''',
         id='non-python-repr',
+    ),
+    pytest.param(
+        """\
+try:
+    raise ValueError('boom')
+except ValueError as e:
+    print(e)
+    #> boom
+""",
+        id='print-in-except',
     ),
 ]
 
