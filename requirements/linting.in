@@ -1,3 +1,4 @@
 black
 ruff
-pre-commit
+# last version that supports 3.7
+pre-commit==2.21.0

@@ -1,4 +1,5 @@
 import re
+import sys
 from pathlib import Path
 
 import pytest
@@ -27,6 +28,7 @@ def find_cases():
             yield pytest.param(f, example, output, test, id=f.name)
 
 
+@pytest.mark.skipif(sys.version_info < (3, 8), reason='getting last line is wrong in 3.7')
 @pytest.mark.parametrize('file_path,example,output,test_code', find_cases())
 def test_cases_update(pytester: pytest.Pytester, file_path: Path, example: str, output: str, test_code: str):
     input_file = pytester.makefile(file_path.suffix, **{f'case_{file_path.stem}': example})

@@ -1,3 +1,6 @@
+from __future__ import annotations as _annotations
+
+import sys
 from pathlib import Path
 
 import pytest
@@ -88,9 +91,10 @@ print(
 ]
 
 
-@pytest.mark.parametrize('python_code,print_line,expected_last_line', print_last_lines)
-def test_find_end_of_print(python_code: str, print_line: int, expected_last_line: tuple[int, int]):
-    assert find_print_location(CodeExample.create(python_code), print_line) == expected_last_line
+@pytest.mark.parametrize('python_code,print_line,expected_last_loc', print_last_lines)
+def test_find_end_of_print(python_code: str, print_line: int, expected_last_loc: tuple[int, int]):
+    last_loc = find_print_location(CodeExample.create(python_code), print_line)
+    assert last_loc == expected_last_loc
 
 
 def fake_example(path: Path, code: str, start_line: int = 0) -> CodeExample:
@@ -218,6 +222,7 @@ print(
 ]
 
 
+@pytest.mark.skipif(sys.version_info < (3, 8), reason='getting last line is wrong in 3.7')
 @pytest.mark.parametrize('python_code', unchanged_code)
 def test_insert_print_check_unchanged(tmp_path, eval_example, python_code: str):
     # note this file is no written here as it's not required

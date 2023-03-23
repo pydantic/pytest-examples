@@ -2,7 +2,7 @@ from __future__ import annotations as _annotations
 
 import importlib.util
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING
 
 import pytest
 from _pytest.assertion.rewrite import AssertionRewritingHook
@@ -12,6 +12,8 @@ from .lint import DEFAULT_LINE_LENGTH, black_check, black_format, ruff_check, ru
 from .traceback import create_example_traceback
 
 if TYPE_CHECKING:
+    from typing import Any, Literal
+
     from .find_examples import CodeExample
 
 __all__ = ('EvalExample',)
