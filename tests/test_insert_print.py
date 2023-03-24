@@ -316,6 +316,25 @@ except ValueError as e:
 """,
         id='print-in-except',
     ),
+    pytest.param(
+        """\
+print({1, 3, 2, 4})
+#> {1, 2, 3, 4}
+""",
+        id='set-order',
+    ),
+    pytest.param(
+        '''\
+class Foo:
+    pass
+
+print(Foo())
+"""
+<__main__.Foo object at 0x0123456789ab>
+"""
+''',
+        id='hex_id',
+    ),
 ]
 
 

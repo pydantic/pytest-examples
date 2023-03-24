@@ -71,56 +71,59 @@ class EvalExample:
     def run(
         self,
         example: CodeExample,
-        globals: dict[str, Any] | None = None,
+        *,
+        module_globals: dict[str, Any] | None = None,
         rewrite_assertions: bool = True,
     ) -> dict[str, Any]:
         """
         Run the example, print is not mocked and print statements are not checked.
 
         :param example: The example to run.
-        :param globals: The globals to use when running the example.
+        :param module_globals: The globals to use when running the example.
         :param rewrite_assertions: If True, rewrite assertions in the example using pytest's assertion rewriting.
         """
         __tracebackhide__ = True
         example.test_id = self._test_id
-        _, module_dict = self._run(example, None, globals, rewrite_assertions)
+        _, module_dict = self._run(example, None, module_globals, rewrite_assertions)
         return module_dict
 
     def run_print_check(
         self,
         example: CodeExample,
-        globals: dict[str, Any] | None = None,
+        *,
+        module_globals: dict[str, Any] | None = None,
         rewrite_assertions: bool = True,
     ) -> dict[str, Any]:
         """
         Run the example and check print statements.
 
         :param example: The example to run.
-        :param globals: The globals to use when running the example.
+        :param module_globals: The globals to use when running the example.
         :param rewrite_assertions: If True, rewrite assertions in the example using pytest's assertion rewriting.
         """
         __tracebackhide__ = True
         example.test_id = self._test_id
-        insert_print, module_dict = self._run(example, 'check', globals, rewrite_assertions)
+        insert_print, module_dict = self._run(example, 'check', module_globals, rewrite_assertions)
         insert_print.check_print_statements(example)
         return module_dict
 
     def run_print_update(
         self,
         example: CodeExample,
-        globals: dict[str, Any] | None = None,
+        *,
+        module_globals: dict[str, Any] | None = None,
         rewrite_assertions: bool = True,
     ) -> dict[str, Any]:
         """
         Run the example and update print statements, requires `--update-examples`.
 
         :param example: The example to run.
-        :param globals: The globals to use when running the example.
+        :param module_globals: The globals to use when running the example.
         :param rewrite_assertions: If True, rewrite assertions in the example using pytest's assertion rewriting.
         """
         __tracebackhide__ = True
         self._check_update(example)
-        insert_print, module_dict = self._run(example, 'update', globals, rewrite_assertions)
+        insert_print, module_dict = self._run(example, 'update', module_globals, rewrite_assertions)
 
         new_code = insert_print.updated_print_statements(example)
         if new_code:
@@ -132,7 +135,7 @@ class EvalExample:
         self,
         example: CodeExample,
         insert_print_statements: Literal['check', 'update', None],
-        globals: dict[str, Any] | None,
+        module_globals: dict[str, Any] | None,
         rewrite_assertions: bool,
     ) -> tuple[InsertPrintStatements, dict[str, Any]]:
         __tracebackhide__ = True
@@ -159,8 +162,8 @@ class EvalExample:
         # does nothing if insert_print_statements is False
         insert_print = InsertPrintStatements(python_file, self.config, enable_print_mock)
 
-        if globals:
-            module.__dict__.update(globals)
+        if module_globals:
+            module.__dict__.update(module_globals)
         try:
             with insert_print:
                 spec.loader.exec_module(module)

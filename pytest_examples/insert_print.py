@@ -33,8 +33,12 @@ class Arg:
     def __init__(self, v: Any):
         if isinstance(v, str):
             self.string = v
+        elif isinstance(v, set):
+            # NOTE! this is not recursive
+            ordered = ', '.join(repr(x) for x in sorted(v))
+            self.string = f'{{{ordered}}}'
         else:
-            self.code = str(v)
+            self.code = re.sub('0x[a-f0-9]{12}>', '0x0123456789ab>', str(v))
 
     def __str__(self) -> str:
         if self.string is not None:

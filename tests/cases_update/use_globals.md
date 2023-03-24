@@ -25,6 +25,6 @@ examples_globals = {}
 @pytest.mark.parametrize('example', find_examples('.'), ids=str)
 def test_find_examples(example: CodeExample, eval_example: EvalExample):
     if eval_example.update_examples:
-        m_dict = eval_example.run_print_update(example, globals=examples_globals)
+        m_dict = eval_example.run_print_update(example, module_globals=examples_globals)
         examples_globals.update(m_dict)
 ```
