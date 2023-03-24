@@ -38,7 +38,7 @@ class Arg:
             ordered = ', '.join(repr(x) for x in sorted(v))
             self.string = f'{{{ordered}}}'
         else:
-            self.code = re.sub('0x[a-f0-9]{12}>', '0x0123456789ab>', str(v))
+            self.code = re.sub('0x[a-f0-9]{8,12}>', '0x0123456789ab>', str(v))
 
     def __str__(self) -> str:
         if self.string is not None:
