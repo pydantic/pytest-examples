@@ -111,14 +111,18 @@ class InsertPrintStatements:
 
         lines = example.source.splitlines()
 
+        old_line_no = -1
+
         for s in reversed(self.print_func.statements):
             line_no, col = find_print_location(example, s.line_no)
 
             # switch from 1-indexed line number to 0-indexed indexes into lines
             line_index = line_no - 1
 
-            remove_old_print(lines, line_index)
+            if s.line_no != old_line_no:
+                remove_old_print(lines, line_index)
             self._insert_print_args(lines, s, example.in_py_file(), line_index, col)
+            old_line_no = s.line_no
 
         return '\n'.join(lines) + '\n'
 
@@ -211,7 +215,18 @@ def find_print_location(example: CodeExample, line_no: int) -> tuple[int, int]:
 
 
 # ast nodes that have a body
-with_body = ast.Module, ast.FunctionDef, ast.If, ast.Try, ast.ExceptHandler, ast.With, ast.For, ast.AsyncFor, ast.While
+with_body = (
+    ast.Module,
+    ast.FunctionDef,
+    ast.If,
+    ast.Try,
+    ast.ExceptHandler,
+    ast.With,
+    ast.For,
+    ast.AsyncFor,
+    ast.While,
+    ast.ClassDef,
+)
 
 
 def find_print(node: Any, line: int) -> tuple[int, int] | None:

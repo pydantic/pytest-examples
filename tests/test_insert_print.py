@@ -106,6 +106,20 @@ print(4)
         (2, 0),
         id='call-attribute',
     ),
+    pytest.param(
+        """\
+@dataclass
+class User:
+    foobar: int
+
+    def __post_init__(self):
+        print(self.foobar)
+        #> 123
+""",
+        6,
+        (6, 8),
+        id='class-method',
+    ),
 ]
 
 

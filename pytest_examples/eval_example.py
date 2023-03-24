@@ -84,7 +84,6 @@ class EvalExample:
         Run the example and check print statements.
 
         :param example: The example to run.
-        :param line_length: The line length to use when wrapping print statements.
         :param rewrite_assertions: If True, rewrite assertions in the example using pytest's assertion rewriting.
         """
         __tracebackhide__ = True
@@ -101,7 +100,6 @@ class EvalExample:
         Run the example and update print statements, requires `--update-examples`.
 
         :param example: The example to run.
-        :param line_length: The line length to use when wrapping print statements.
         :param rewrite_assertions: If True, rewrite assertions in the example using pytest's assertion rewriting.
         """
         __tracebackhide__ = True
