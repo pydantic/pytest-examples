@@ -1,15 +1,15 @@
 from __future__ import annotations as _annotations
 
 import importlib.util
-from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest
 from _pytest.assertion.rewrite import AssertionRewritingHook
 
+from .config import DEFAULT_LINE_LENGTH, ExamplesConfig
 from .insert_print import InsertPrintStatements
-from .lint import DEFAULT_LINE_LENGTH, black_check, black_format, ruff_check, ruff_format
+from .lint import black_check, black_format, ruff_check, ruff_format
 from .traceback import create_example_traceback
 
 if TYPE_CHECKING:
@@ -17,17 +17,7 @@ if TYPE_CHECKING:
 
     from .find_examples import CodeExample
 
-__all__ = 'EvalExample', 'ExamplesConfig'
-
-
-@dataclass
-class ExamplesConfig:
-    line_length: int = DEFAULT_LINE_LENGTH
-    quotes: Literal['single', 'double', 'either'] = 'either'
-    magic_trailing_comma: bool = True
-    target_version: Literal['py37', 'py38', 'py39', 'py310', 'py311'] = 'py37'
-    upgrade: bool = False
-    isort: bool = False
+__all__ = ('EvalExample',)
 
 
 class EvalExample:
@@ -192,8 +182,7 @@ class EvalExample:
         :param example: The example to lint.
         """
         example.test_id = self._test_id
-        python_file = self._write_file(example)
-        ruff_check(example, python_file, self.config)
+        ruff_check(example, self.config)
 
     def format(self, example: CodeExample) -> None:
         """
@@ -228,8 +217,7 @@ class EvalExample:
         """
         self._check_update(example)
 
-        python_file = self._write_file(example)
-        new_content = ruff_format(example, python_file, self.config)
+        new_content = ruff_format(example, self.config)
         if new_content != example.source:
             example.source = new_content
             self._mark_for_update(example)
