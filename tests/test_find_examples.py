@@ -189,3 +189,16 @@ def func_a():
     example: CodeExample = examples[0]
     assert code[example.start_index : example.end_index] == '    a = 1\n    b = 2\n    assert a + b == 3\n'
     assert example.source == 'a = 1\nb = 2\nassert a + b == 3\n'
+
+
+@pytest.mark.parametrize(
+    'prefix,prefix_settings',
+    [
+        ('py test="skip"', {'test': 'skip'}),
+        ('py test="skip" foo="B ar"', {'test': 'skip', 'foo': 'B ar'}),
+        ("py test='require-3.8'", {'test': 'require-3.8'}),
+    ],
+)
+def test_prefix_settings(prefix, prefix_settings):
+    ex = CodeExample.create('foobar', prefix=prefix)
+    assert ex.prefix_settings() == prefix_settings

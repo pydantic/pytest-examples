@@ -27,7 +27,7 @@ class CodeExample:
     end_index: int
     """Index of the end of the example."""
     prefix: str
-    """The prefix of the code block, e.g. `py`, can also contain `test="skip"`."""
+    """The prefix of the code block, e.g. `py`, can also contain rules for skipping some tests."""
     source: str
     """The source code of the example, this is has any indent removed."""
     indent: int
@@ -65,6 +65,15 @@ class CodeExample:
         A suitable Python module name for testing the example.
         """
         return f'{self.path.stem}_{self.start_line}_{self.end_line}'
+
+    def prefix_settings(self) -> dict[str, str]:
+        """
+        Key/value pairs from the prefix line
+        """
+        settings = {}
+        for m in re.finditer(r'(\S+?)=([\'"])(.+?)\2', self.prefix):
+            settings[m.group(1)] = m.group(3)
+        return settings
 
     def in_py_file(self) -> bool:
         """

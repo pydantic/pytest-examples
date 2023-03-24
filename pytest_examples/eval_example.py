@@ -36,6 +36,7 @@ class EvalExample:
         self,
         *,
         line_length: int = DEFAULT_LINE_LENGTH,
+        ruff_line_length: int | None = None,
         quotes: Literal['single', 'double', 'either'] = 'either',
         magic_trailing_comma: bool = True,
         target_version: Literal['py37', 'py38', 'py39', 'py310', 'py310'] = 'py37',
@@ -45,12 +46,15 @@ class EvalExample:
         Set the config for lints
 
         :param line_length: The line length to use when wrapping print statements, defaults to 88.
+        :param ruff_line_length: In general we disable line-length checks in ruff, to let black take care of them.
         :param quotes: The quote to use, defaults to "either".
         :param magic_trailing_comma: If True, add a trailing comma to magic methods, defaults to True.
         :param target_version: The target version to use when upgrading code, defaults to "py37".
         :param upgrade: If True, upgrade the code to the target version, defaults to False.
         """
-        self.config = ExamplesConfig(line_length, quotes, magic_trailing_comma, target_version, upgrade)
+        self.config = ExamplesConfig(
+            line_length, ruff_line_length, quotes, magic_trailing_comma, target_version, upgrade
+        )
 
     @property
     def update_examples(self) -> bool:

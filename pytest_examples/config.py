@@ -20,6 +20,7 @@ __all__ = 'ExamplesConfig', 'DEFAULT_LINE_LENGTH'
 @dataclass
 class ExamplesConfig:
     line_length: int = DEFAULT_LINE_LENGTH
+    ruff_line_length: int | None = None
     quotes: Literal['single', 'double', 'either'] = 'either'
     magic_trailing_comma: bool = True
     target_version: Literal['py37', 'py38', 'py39', 'py310', 'py311'] = 'py37'
@@ -42,7 +43,8 @@ class ExamplesConfig:
         ruff_toml = self._to_ruff_toml()
 
         if ruff_toml is None:
-            return ()
+            # if there's no custom config, prevent ruff using a local config
+            return ('--isolated',)
 
         config_file = Path(tempfile.gettempdir()) / 'pytest-examples-ruff-config' / self.hash() / 'ruff.toml'
         if not config_file.exists():
@@ -53,6 +55,12 @@ class ExamplesConfig:
 
     def _to_ruff_toml(self) -> str | None:
         config_lines = []
+        if self.ruff_line_length is None:
+            # if not ruff line length, ignore E501 which is line length errors
+            # by default, ruff sets the line length to 88
+            config_lines.append("ignore = ['E501']")
+        else:
+            config_lines.append(f'line-length = {self.ruff_line_length}')
         # line length is enforced by black
 
         select = []
