@@ -16,6 +16,8 @@ class CodeExample:
     Information about a Python code example.
     """
 
+    source: str
+    """The source code of the example, this is has any indent removed."""
     path: Path
     """The path to the file containing the example."""
     start_line: int
@@ -28,8 +30,6 @@ class CodeExample:
     """Index of the end of the example."""
     prefix: str
     """The prefix of the code block, e.g. `py`, can also contain rules for skipping some tests."""
-    source: str
-    """The source code of the example, this is has any indent removed."""
     indent: int
     """The indentation of the example, number of spaces."""
     group: UUID | None = None
@@ -57,7 +57,16 @@ class CodeExample:
             end_line = start_line + source.count('\n')
         if end_index is None:
             end_index = start_index + len(source)
-        return cls(path, start_line, end_line, start_index, end_index, prefix, source, indent)
+        return cls(
+            source=source,
+            path=path,
+            start_line=start_line,
+            end_line=end_line,
+            start_index=start_index,
+            end_index=end_index,
+            prefix=prefix,
+            indent=indent,
+        )
 
     @property
     def module_name(self) -> str:
@@ -132,15 +141,15 @@ def _extract_code_chunks(
             # 3 for the ``` and 1 for the newline
             start_index = index_offset + m_code.start() + len(m_code.group(1)) + 3 + len(prefix) + 1
             yield CodeExample(
-                path,
-                start_line,
-                start_line + source.count('\n') + 1,
-                start_index,
-                start_index + len(source),
-                prefix,
-                source_dedent,
-                indent,
-                group,
+                source=source_dedent,
+                path=path,
+                start_line=start_line,
+                end_line=start_line + source.count('\n') + 1,
+                start_index=start_index,
+                end_index=start_index + len(source),
+                prefix=prefix,
+                indent=indent,
+                group=group,
             )
 
 

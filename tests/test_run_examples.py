@@ -258,9 +258,7 @@ div(0)"""
 """
     md_file = tmp_path / 'test.md'
     md_file.write_text(markdown)
-    example = CodeExample(
-        md_file, start_line=3, end_line=6, start_index=0, end_index=0, prefix='', source=python_code, indent=0
-    )
+    example = CodeExample.create(python_code, path=md_file, start_line=3, end_line=6)
     with pytest.raises(ZeroDivisionError) as exc_info:
         eval_example.run(example)
 
