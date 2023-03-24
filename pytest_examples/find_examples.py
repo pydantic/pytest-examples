@@ -1,6 +1,7 @@
 from __future__ import annotations as _annotations
 
 import re
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from textwrap import dedent
@@ -98,12 +99,16 @@ class CodeExample:
         return f'{path}:{self.start_line}-{self.end_line}'
 
 
-def find_examples(*directories: str) -> Iterable[CodeExample]:
+def find_examples(*directories: str, run_on_windows: bool = False) -> Iterable[CodeExample]:
     """
     Find Python code examples in markdown files and python file docstrings.
 
     Yields `CodeExample` objects wrapped in a `pytest.param` object.
     """
+    if not run_on_windows and sys.platform == 'win32':
+        # this avoids errors reading files on windows as pytest parametrize is eager
+        return
+
     for d in directories:
         dir_path = Path(d)
         if dir_path.is_file():
