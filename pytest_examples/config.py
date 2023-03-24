@@ -2,7 +2,6 @@ from __future__ import annotations as _annotations
 
 import hashlib
 import tempfile
-from dataclasses import asdict as dc_asdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -36,7 +35,8 @@ class ExamplesConfig:
         )
 
     def hash(self) -> str:
-        return hashlib.md5(str(dc_asdict(self)).encode()).hexdigest()
+        # str(self) should be a good identifier of a specific config
+        return hashlib.md5(str(self).encode()).hexdigest()
 
     def ruff_config(self) -> tuple[str, ...]:
         ruff_toml = self._to_ruff_toml()
@@ -44,7 +44,7 @@ class ExamplesConfig:
         if ruff_toml is None:
             return ()
 
-        config_file = Path(tempfile.gettempdir()) / 'pytest-examples-ruff-config' / f'ruff-{self.hash()}.toml'
+        config_file = Path(tempfile.gettempdir()) / 'pytest-examples-ruff-config' / self.hash() / 'ruff.toml'
         if not config_file.exists():
             config_file.parent.mkdir(parents=True, exist_ok=True)
             config_file.write_text(ruff_toml)
