@@ -224,6 +224,8 @@ with_body = (
     ast.With,
     ast.For,
     ast.AsyncFor,
+    ast.AsyncFunctionDef,
+    ast.AsyncWith,
     ast.While,
     ast.ClassDef,
 )

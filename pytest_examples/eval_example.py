@@ -2,7 +2,7 @@ from __future__ import annotations as _annotations
 
 import importlib.util
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from _pytest.assertion.rewrite import AssertionRewritingHook
@@ -36,24 +36,32 @@ class EvalExample:
         self,
         *,
         line_length: int = DEFAULT_LINE_LENGTH,
-        ruff_line_length: int | None = None,
         quotes: Literal['single', 'double', 'either'] = 'either',
         magic_trailing_comma: bool = True,
         target_version: Literal['py37', 'py38', 'py39', 'py310', 'py310'] = 'py37',
         upgrade: bool = False,
+        ruff_line_length: int | None = None,
+        ruff_ignore: list[str] | None = None,
     ):
         """
         Set the config for lints
 
         :param line_length: The line length to use when wrapping print statements, defaults to 88.
-        :param ruff_line_length: In general we disable line-length checks in ruff, to let black take care of them.
         :param quotes: The quote to use, defaults to "either".
         :param magic_trailing_comma: If True, add a trailing comma to magic methods, defaults to True.
         :param target_version: The target version to use when upgrading code, defaults to "py37".
         :param upgrade: If True, upgrade the code to the target version, defaults to False.
+        :param ruff_line_length: In general, we disable line-length checks in ruff, to let black take care of them.
+        :param ruff_ignore: Ruff rule to ignore
         """
         self.config = ExamplesConfig(
-            line_length, ruff_line_length, quotes, magic_trailing_comma, target_version, upgrade
+            line_length=line_length,
+            quotes=quotes,
+            magic_trailing_comma=magic_trailing_comma,
+            target_version=target_version,
+            upgrade=upgrade,
+            ruff_line_length=ruff_line_length,
+            ruff_ignore=ruff_ignore,
         )
 
     @property
@@ -63,60 +71,70 @@ class EvalExample:
     def run(
         self,
         example: CodeExample,
+        globals: dict[str, Any] | None = None,
         rewrite_assertions: bool = True,
-    ) -> None:
+    ) -> dict[str, Any]:
         """
         Run the example, print is not mocked and print statements are not checked.
 
         :param example: The example to run.
+        :param globals: The globals to use when running the example.
         :param rewrite_assertions: If True, rewrite assertions in the example using pytest's assertion rewriting.
         """
         __tracebackhide__ = True
         example.test_id = self._test_id
-        self._run(example, None, rewrite_assertions)
+        _, module_dict = self._run(example, None, globals, rewrite_assertions)
+        return module_dict
 
     def run_print_check(
         self,
         example: CodeExample,
+        globals: dict[str, Any] | None = None,
         rewrite_assertions: bool = True,
-    ) -> None:
+    ) -> dict[str, Any]:
         """
         Run the example and check print statements.
 
         :param example: The example to run.
+        :param globals: The globals to use when running the example.
         :param rewrite_assertions: If True, rewrite assertions in the example using pytest's assertion rewriting.
         """
         __tracebackhide__ = True
         example.test_id = self._test_id
-        insert_print = self._run(example, 'check', rewrite_assertions)
+        insert_print, module_dict = self._run(example, 'check', globals, rewrite_assertions)
         insert_print.check_print_statements(example)
+        return module_dict
 
     def run_print_update(
         self,
         example: CodeExample,
+        globals: dict[str, Any] | None = None,
         rewrite_assertions: bool = True,
-    ) -> None:
+    ) -> dict[str, Any]:
         """
         Run the example and update print statements, requires `--update-examples`.
 
         :param example: The example to run.
+        :param globals: The globals to use when running the example.
         :param rewrite_assertions: If True, rewrite assertions in the example using pytest's assertion rewriting.
         """
         __tracebackhide__ = True
         self._check_update(example)
-        insert_print = self._run(example, 'update', rewrite_assertions)
+        insert_print, module_dict = self._run(example, 'update', globals, rewrite_assertions)
 
         new_code = insert_print.updated_print_statements(example)
         if new_code:
             example.source = new_code
             self._mark_for_update(example)
+        return module_dict
 
     def _run(
         self,
         example: CodeExample,
         insert_print_statements: Literal['check', 'update', None],
+        globals: dict[str, Any] | None,
         rewrite_assertions: bool,
-    ) -> InsertPrintStatements:
+    ) -> tuple[InsertPrintStatements, dict[str, Any]]:
         __tracebackhide__ = True
         if 'test="skip"' in example.prefix:
             pytest.skip('test="skip" on code snippet, skipping')
@@ -141,6 +159,8 @@ class EvalExample:
         # does nothing if insert_print_statements is False
         insert_print = InsertPrintStatements(python_file, self.config, enable_print_mock)
 
+        if globals:
+            module.__dict__.update(globals)
         try:
             with insert_print:
                 spec.loader.exec_module(module)
@@ -153,7 +173,7 @@ class EvalExample:
             else:
                 raise exc
 
-        return insert_print
+        return insert_print, {k: v for k, v in module.__dict__.items() if not k.startswith(('__', '@'))}
 
     def lint(self, example: CodeExample) -> None:
         """

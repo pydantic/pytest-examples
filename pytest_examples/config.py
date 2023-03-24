@@ -20,12 +20,13 @@ __all__ = 'ExamplesConfig', 'DEFAULT_LINE_LENGTH'
 @dataclass
 class ExamplesConfig:
     line_length: int = DEFAULT_LINE_LENGTH
-    ruff_line_length: int | None = None
     quotes: Literal['single', 'double', 'either'] = 'either'
     magic_trailing_comma: bool = True
     target_version: Literal['py37', 'py38', 'py39', 'py310', 'py311'] = 'py37'
     upgrade: bool = False
     isort: bool = False
+    ruff_line_length: int | None = None
+    ruff_ignore: list[str] | None = None
 
     def black_mode(self):
         return BlackMode(
@@ -55,15 +56,17 @@ class ExamplesConfig:
 
     def _to_ruff_toml(self) -> str | None:
         config_lines = []
+        select = []
+        ignore = []
+
+        # line length is enforced by black
         if self.ruff_line_length is None:
             # if not ruff line length, ignore E501 which is line length errors
             # by default, ruff sets the line length to 88
-            config_lines.append("ignore = ['E501']")
+            ignore.append('E501')
         else:
             config_lines.append(f'line-length = {self.ruff_line_length}')
-        # line length is enforced by black
 
-        select = []
         if self.quotes == 'single':
             # enforce single quotes using ruff, black will enforce double quotes
             select.append('Q')
@@ -77,8 +80,13 @@ class ExamplesConfig:
         if self.isort:
             select.append('I')
 
+        if self.ruff_ignore:
+            ignore.extend(self.ruff_ignore)
+
         if select:
             config_lines.append(f'select = {select}')
+        if ignore:
+            config_lines.append(f'ignore = {ignore}')
 
         if config_lines:
             return '\n'.join(config_lines)

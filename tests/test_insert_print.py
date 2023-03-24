@@ -120,6 +120,17 @@ class User:
         (6, 8),
         id='class-method',
     ),
+    pytest.param(
+        """\
+async with foobar():
+    print(
+        1
+    )
+""",
+        2,
+        (4, 4),
+        id='async-function',
+    ),
 ]
 
 
