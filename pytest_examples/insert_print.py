@@ -17,7 +17,7 @@ from black import InvalidInput
 from .lint import black_format, code_diff
 
 if TYPE_CHECKING:
-    from .eval_example import ExamplesConfig
+    from .config import ExamplesConfig
     from .find_examples import CodeExample
 
 __all__ = ('InsertPrintStatements',)
