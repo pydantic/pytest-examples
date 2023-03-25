@@ -1,7 +1,6 @@
 from __future__ import annotations as _annotations
 
 import re
-import sys
 from dataclasses import dataclass
 from pathlib import Path
 from textwrap import dedent
@@ -99,29 +98,30 @@ class CodeExample:
         return f'{path}:{self.start_line}-{self.end_line}'
 
 
-def find_examples(*directories: str, run_on_windows: bool = False) -> Iterable[CodeExample]:
+def find_examples(*paths: str, skip: bool = False) -> Iterable[CodeExample]:
     """
     Find Python code examples in markdown files and python file docstrings.
 
-    Yields `CodeExample` objects wrapped in a `pytest.param` object.
+    :param paths: Directories or files to search for examples in.
+    :param skip: Whether to exit early and not search for examples, useful when running on windows where search fails.
+    :return: A generator of `CodeExample` objects.
     """
-    if not run_on_windows and sys.platform == 'win32':
-        # this avoids errors reading files on windows as pytest parametrize is eager
+    if skip:
         return
 
-    for d in directories:
-        dir_path = Path(d)
-        if dir_path.is_file():
-            paths = [dir_path]
-        elif dir_path.is_dir():
-            paths = dir_path.glob('**/*')
+    for s in paths:
+        path = Path(s)
+        if path.is_file():
+            sub_paths = [path]
+        elif path.is_dir():
+            sub_paths = path.glob('**/*')
         else:
-            raise ValueError(f'Not a file or directory: {d!r}')
+            raise ValueError(f'Not a file or directory: {s!r}')
 
-        for path in paths:
+        for path in sub_paths:
             group = uuid4()
             if path.suffix == '.py':
-                code = path.read_text()
+                code = path.read_text('utf-8')
                 for m_docstring in re.finditer(r'(^ *)(r?"""\n)(.+?)\1"""', code, flags=re.M | re.S):
                     start_line = code[: m_docstring.start()].count('\n') + 1
                     docstring = m_docstring.group(3)
