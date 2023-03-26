@@ -155,14 +155,14 @@ def find_examples(*paths: str, skip: bool = False) -> Iterable[CodeExample]:
 def _extract_code_chunks(
     path: Path, text: str, group: UUID, *, line_offset: int = 0, index_offset: int = 0
 ) -> Iterable[CodeExample]:
-    for m_code in re.finditer(r'(^ *)``` *(.*?)$\n(.+?)\1```', text, flags=re.M | re.S):
-        prefix = m_code.group(2).lower()
+    for m_code in re.finditer(r'(^ *```)( *)(.*?)\n(.+?)\1', text, flags=re.M | re.S):
+        group1, group2, prefix, source = m_code.groups()
+        prefix = prefix.lower()
         if prefix.startswith(('py', '{.py')):
             start_line = line_offset + text[: m_code.start()].count('\n') + 1
-            source = m_code.group(3)
             source_dedent, indent = remove_indent(source)
-            # 3 for the ``` and 1 for the newline
-            start_index = index_offset + m_code.start() + len(m_code.group(1)) + 3 + len(prefix) + 1
+            # 1 for the newline
+            start_index = index_offset + m_code.start() + len(group1) + len(group2) + len(prefix) + 1
             yield CodeExample(
                 source=source_dedent,
                 path=path,
