@@ -6,10 +6,11 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 from _pytest.assertion.rewrite import AssertionRewritingHook
+from _pytest.outcomes import Failed as PytestFailed
 
 from .config import DEFAULT_LINE_LENGTH, ExamplesConfig
 from .insert_print import InsertPrintStatements
-from .lint import black_check, black_format, ruff_check, ruff_format
+from .lint import FormatError, black_check, black_format, ruff_check, ruff_format
 from .traceback import create_example_traceback
 
 if TYPE_CHECKING:
@@ -195,7 +196,10 @@ class EvalExample:
         :param example: The example to lint.
         """
         example.test_id = self._test_id
-        black_check(example, self.config)
+        try:
+            black_check(example, self.config)
+        except FormatError as exc:
+            raise PytestFailed(str(exc), pytrace=False) from None
 
     def lint_ruff(
         self,
@@ -207,7 +211,10 @@ class EvalExample:
         :param example: The example to lint.
         """
         example.test_id = self._test_id
-        ruff_check(example, self.config)
+        try:
+            ruff_check(example, self.config)
+        except FormatError as exc:
+            raise PytestFailed(str(exc), pytrace=False) from None
 
     def format(self, example: CodeExample) -> None:
         """
@@ -242,10 +249,14 @@ class EvalExample:
         """
         self._check_update(example)
 
-        new_content = ruff_format(example, self.config)
-        if new_content != example.source:
-            example.source = new_content
-            self._mark_for_update(example)
+        try:
+            new_content = ruff_format(example, self.config)
+        except FormatError as exc:
+            raise PytestFailed(str(exc), pytrace=False) from None
+        else:
+            if new_content != example.source:
+                example.source = new_content
+                self._mark_for_update(example)
 
     def _check_update(self, example: CodeExample) -> None:
         if not self.update_examples:
