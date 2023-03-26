@@ -41,6 +41,7 @@ class EvalExample:
         magic_trailing_comma: bool = True,
         target_version: Literal['py37', 'py38', 'py39', 'py310', 'py310'] = 'py37',
         upgrade: bool = False,
+        isort: bool = False,
         ruff_line_length: int | None = None,
         ruff_ignore: list[str] | None = None,
     ):
@@ -52,6 +53,7 @@ class EvalExample:
         :param magic_trailing_comma: If True, add a trailing comma to magic methods, defaults to True.
         :param target_version: The target version to use when upgrading code, defaults to "py37".
         :param upgrade: If True, upgrade the code to the target version, defaults to False.
+        :param isort: If True, run ruff's isort extension on the code, defaults to False.
         :param ruff_line_length: In general, we disable line-length checks in ruff, to let black take care of them.
         :param ruff_ignore: Ruff rule to ignore
         """
@@ -61,6 +63,7 @@ class EvalExample:
             magic_trailing_comma=magic_trailing_comma,
             target_version=target_version,
             upgrade=upgrade,
+            isort=isort,
             ruff_line_length=ruff_line_length,
             ruff_ignore=ruff_ignore,
         )
@@ -184,7 +187,6 @@ class EvalExample:
         Lint the example with black and ruff.
 
         :param example: The example to lint.
-        :param line_length: The line length to use when linting.
         """
         self.lint_black(example)
         self.lint_ruff(example)
