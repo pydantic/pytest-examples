@@ -1,6 +1,5 @@
 from __future__ import annotations as _annotations
 
-import importlib.util
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -9,9 +8,8 @@ from _pytest.assertion.rewrite import AssertionRewritingHook
 from _pytest.outcomes import Failed as PytestFailed
 
 from .config import DEFAULT_LINE_LENGTH, ExamplesConfig
-from .insert_print import InsertPrintStatements
 from .lint import FormatError, black_check, black_format, ruff_check, ruff_format
-from .traceback import create_example_traceback
+from .run_code import InsertPrintStatements, run_code
 
 if TYPE_CHECKING:
     from typing import Literal
@@ -143,18 +141,12 @@ class EvalExample:
         rewrite_assertions: bool,
     ) -> tuple[InsertPrintStatements, dict[str, Any]]:
         __tracebackhide__ = True
-        if 'test="skip"' in example.prefix:
-            pytest.skip('test="skip" on code snippet, skipping')
 
         if rewrite_assertions:
             loader = AssertionRewritingHook(config=self._pytest_config)
             loader.mark_rewrite(example.module_name)
         else:
             loader = None
-
-        python_file = self._write_file(example)
-        spec = importlib.util.spec_from_file_location('__main__', str(python_file), loader=loader)
-        module = importlib.util.module_from_spec(spec)
 
         if insert_print_statements == 'check':
             enable_print_mock = True
@@ -163,24 +155,8 @@ class EvalExample:
         else:
             enable_print_mock = False
 
-        # does nothing if insert_print_statements is False
-        insert_print = InsertPrintStatements(python_file, self.config, enable_print_mock)
-
-        if module_globals:
-            module.__dict__.update(module_globals)
-        try:
-            with insert_print:
-                spec.loader.exec_module(module)
-        except KeyboardInterrupt:
-            print(f'KeyboardInterrupt in example {self}')
-        except Exception as exc:
-            example_tb = create_example_traceback(exc, str(python_file), example)
-            if example_tb:
-                raise exc.with_traceback(example_tb)
-            else:
-                raise exc
-
-        return insert_print, {k: v for k, v in module.__dict__.items() if not k.startswith(('__', '@'))}
+        python_file = self._write_file(example)
+        return run_code(example, python_file, loader, self.config, enable_print_mock, module_globals)
 
     def lint(self, example: CodeExample) -> None:
         """
@@ -275,11 +251,5 @@ class EvalExample:
 
     def _write_file(self, example: CodeExample) -> Path:
         python_file = self.tmp_path / f'{example.module_name}.py'
-        # python_file.parent.mkdir(exist_ok=True)
-        if self.update_examples:
-            # if we're in update mode, we need to always rewrite the file
-            python_file.write_text(example.source)
-        elif not python_file.exists():
-            # assume if it already exists, it's because it was previously written in this test
-            python_file.write_text(example.source)
+        python_file.write_text(example.source)
         return python_file

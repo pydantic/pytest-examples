@@ -4,7 +4,7 @@ import pytest
 from _pytest.outcomes import Failed
 
 from pytest_examples import CodeExample
-from pytest_examples.insert_print import find_print_location
+from pytest_examples.run_code import find_print_location
 
 # separate list to hopefully make it easier to read
 print_last_lines = [

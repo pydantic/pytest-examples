@@ -2,10 +2,12 @@ from __future__ import annotations as _annotations
 
 import ast
 import dataclasses
+import importlib.util
 import inspect
 import re
 import sys
 from dataclasses import dataclass
+from importlib.abc import Loader
 from pathlib import Path
 from textwrap import indent
 from typing import TYPE_CHECKING, Any
@@ -15,14 +17,48 @@ import pytest
 from black import InvalidInput
 
 from .lint import black_format, code_diff
+from .traceback import create_example_traceback
 
 if TYPE_CHECKING:
     from .config import ExamplesConfig
     from .find_examples import CodeExample
 
-__all__ = ('InsertPrintStatements',)
+__all__ = 'run_code', 'InsertPrintStatements'
 
 parent_frame_id = 4 if sys.version_info >= (3, 8) else 3
+
+
+def run_code(
+    example: CodeExample,
+    python_file: Path,
+    loader: Loader | None,
+    config: ExamplesConfig,
+    enable_print_mock: bool,
+    module_globals: dict[str, Any] | None,
+) -> tuple[InsertPrintStatements, dict[str, Any]]:
+    __tracebackhide__ = True
+
+    spec = importlib.util.spec_from_file_location('__main__', str(python_file), loader=loader)
+    module = importlib.util.module_from_spec(spec)
+
+    # does nothing if insert_print_statements is False
+    insert_print = InsertPrintStatements(python_file, config, enable_print_mock)
+
+    if module_globals:
+        module.__dict__.update(module_globals)
+    try:
+        with insert_print:
+            spec.loader.exec_module(module)
+    except KeyboardInterrupt:
+        print('KeyboardInterrupt in example')
+    except Exception as exc:
+        example_tb = create_example_traceback(exc, str(python_file), example)
+        if example_tb:
+            raise exc.with_traceback(example_tb)
+        else:
+            raise exc
+
+    return insert_print, {k: v for k, v in module.__dict__.items() if not k.startswith(('__', '@'))}
 
 
 @dataclass(init=False)
@@ -61,6 +97,9 @@ class PrintStatement:
     line_no: int
     sep: str
     args: list[Arg]
+
+    def __str__(self):
+        return self.sep.join(map(str, self.args))
 
 
 def not_print(*args):
@@ -109,6 +148,9 @@ class InsertPrintStatements:
         with_prints = self._insert_print_statements(example)
         if example.source != with_prints:
             return with_prints
+
+    def print_statements(self) -> list[PrintStatement]:
+        return self.print_func.statements if self.print_func else []
 
     def _insert_print_statements(self, example: CodeExample) -> str:
         assert self.print_func is not None, 'print statements not being inserted'

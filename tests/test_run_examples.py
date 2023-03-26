@@ -62,26 +62,6 @@ def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
     ]
 
 
-def test_run_example_skip(pytester: pytest.Pytester):
-    pytester.makefile(
-        '.md',
-        # language=Markdown
-        my_file="""
-# My file
-
-```py test="skip"
-a = 1
-b = 2
-assert a + b == 3
-```
-        """,
-    )
-    pytester.makepyfile(python_code)
-
-    result = pytester.runpytest('-p', 'no:pretty')
-    result.assert_outcomes(skipped=1)
-
-
 def test_ruff_ok(pytester: pytest.Pytester):
     pytester.makefile(
         '.md',
