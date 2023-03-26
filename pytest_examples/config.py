@@ -41,23 +41,10 @@ class ExamplesConfig:
         return hashlib.md5(str(self).encode()).hexdigest()
 
     def ruff_config(self) -> tuple[str, ...]:
-        ruff_toml = self._to_ruff_toml()
-
-        if ruff_toml is None:
-            # if there's no custom config, prevent ruff using a local config
-            return ('--isolated',)
-
-        config_file = Path(tempfile.gettempdir()) / 'pytest-examples-ruff-config' / self.hash() / 'ruff.toml'
-        if not config_file.exists():
-            config_file.parent.mkdir(parents=True, exist_ok=True)
-            config_file.write_text(ruff_toml)
-
-        return '--config', str(config_file)
-
-    def _to_ruff_toml(self) -> str | None:
         config_lines = []
         select = []
         ignore = []
+        args = []
 
         # line length is enforced by black
         if self.ruff_line_length is None:
@@ -65,7 +52,7 @@ class ExamplesConfig:
             # by default, ruff sets the line length to 88
             ignore.append('E501')
         else:
-            config_lines.append(f'line-length = {self.ruff_line_length}')
+            args.append(f'--line-length={self.ruff_line_length}')
 
         if self.quotes == 'single':
             # enforce single quotes using ruff, black will enforce double quotes
@@ -73,7 +60,7 @@ class ExamplesConfig:
             config_lines.append("flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}")
 
         if self.target_version:
-            config_lines.append(f'target-version = "{self.target_version}"')
+            args.append(f'--target-version={self.target_version}')
 
         if self.upgrade:
             select.append('UP')
@@ -84,9 +71,18 @@ class ExamplesConfig:
             ignore.extend(self.ruff_ignore)
 
         if select:
-            config_lines.append(f'select = {select}')
+            # use extend to not disable default select
+            args.append(f'--extend-select={",".join(select)}')
         if ignore:
-            config_lines.append(f'ignore = {ignore}')
+            args.append(f'--ignore={",".join(ignore)}')
 
         if config_lines:
-            return '\n'.join(config_lines)
+            config_toml = '\n'.join(config_lines)
+            config_file = Path(tempfile.gettempdir()) / 'pytest-examples-ruff-config' / self.hash() / 'ruff.toml'
+            if not config_file.exists() or config_file.read_text() != config_toml:
+                config_file.parent.mkdir(parents=True, exist_ok=True)
+                config_file.write_text(config_toml)
+
+            args.append(f'--config={config_file}')
+
+        return tuple(args)
