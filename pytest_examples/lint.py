@@ -5,7 +5,6 @@ from subprocess import PIPE, Popen
 from textwrap import indent
 from typing import TYPE_CHECKING
 
-import pytest
 from black import format_str as black_format_str
 from black.output import diff as black_diff
 
@@ -14,7 +13,11 @@ from .config import ExamplesConfig
 if TYPE_CHECKING:
     from .find_examples import CodeExample
 
-__all__ = 'ruff_check', 'ruff_format', 'black_check', 'black_format', 'code_diff'
+__all__ = 'ruff_check', 'ruff_format', 'black_check', 'black_format', 'code_diff', 'FormatError'
+
+
+class FormatError(ValueError):
+    pass
 
 
 def ruff_format(
@@ -22,7 +25,16 @@ def ruff_format(
     config: ExamplesConfig | None,
 ) -> str:
     args = ('--fix',)
-    return ruff_check(example, config, extra_ruff_args=args)
+    try:
+        return ruff_check(example, config, extra_ruff_args=args)
+    except FormatError:
+        # this is a workaround for https://github.com/charliermarsh/ruff/issues/3694#issuecomment-1483388856
+        try:
+            ruff_check(example, config)
+        except FormatError as e2:
+            raise e2 from None
+        else:
+            raise Exception('ruff failed in Fix mode but not in Check mode, please report this')
 
 
 def ruff_check(
@@ -44,7 +56,7 @@ def ruff_check(
             return f'{example.path}:{line_number + example.start_line}'
 
         output = re.sub(r'^-:(\d+)', replace_offset, stdout, flags=re.M)
-        pytest.fail(f'ruff failed:\n{indent(output, "  ")}', pytrace=False)
+        raise FormatError(f'ruff failed:\n{indent(output, "  ")}')
     elif p.returncode != 0:
         raise RuntimeError(f'Error running ruff, return code {p.returncode}:\n{stderr or stdout}')
     else:
@@ -66,7 +78,7 @@ def black_check(example: CodeExample, config: ExamplesConfig) -> None:
     after_black = black_format(example.source, config, remove_double_blank=example.in_py_file())
     if example.source != after_black:
         diff = code_diff(example, after_black)
-        pytest.fail(f'black failed:\n{indent(diff, "  ")}', pytrace=False)
+        raise FormatError(f'black failed:\n{indent(diff, "  ")}')
 
 
 def code_diff(example: CodeExample, after: str) -> str:
