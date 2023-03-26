@@ -12,14 +12,18 @@ def test_find_md_example(pytester: pytest.Pytester):
 
 ```py
 a = 1
-b = 2
-assert a + b == 3
 ```
 
-```py
+``` py
+b = 2
+```
+
+```{.py .test="skip"}
 c = 3
+```
+
+``` {.py}
 d = 4
-assert c + d == 7
 ```
         """,
     )
@@ -32,16 +36,18 @@ import pytest
 @pytest.mark.parametrize('example', find_examples('.'), ids=str)
 def test_find_examples(example):
     assert example.indent == 0
-    assert example.end_line == example.start_line + 4
+    assert example.end_line == example.start_line + 2
         """
     )
 
     result = pytester.runpytest('-p', 'no:pretty', '-v')
-    result.assert_outcomes(passed=2)
-
     output = '\n'.join(result.outlines)
-    assert 'test_find_examples[my_file.md:3-7] PASSED' in output
-    assert 'test_find_examples[my_file.md:9-13] PASSED' in output
+    result.assert_outcomes(passed=4)
+
+    assert 'test_find_examples[my_file.md:3-5] PASSED' in output
+    assert 'test_find_examples[my_file.md:7-9] PASSED' in output
+    assert 'test_find_examples[my_file.md:11-13] PASSED' in output
+    assert 'test_find_examples[my_file.md:15-17] PASSED' in output
 
 
 def test_find_py_example(pytester: pytest.Pytester):
@@ -202,3 +208,17 @@ def func_a():
 def test_prefix_settings(prefix, prefix_settings):
     ex = CodeExample.create('foobar', prefix=prefix)
     assert ex.prefix_settings() == prefix_settings
+
+
+@pytest.mark.parametrize(
+    'prefix,prefix_tags',
+    [
+        ('{.py .foobar}', {'foobar'}),
+        ("{.py 'foo bar'", {'foo bar'}),
+        ('py mytag', {'mytag'}),
+        ('py test="skip" foo="B ar"', {'test=skip', 'foo=B ar'}),
+    ],
+)
+def test_prefix_tags(prefix, prefix_tags):
+    ex = CodeExample.create('foobar', prefix=prefix)
+    assert ex.prefix_tags() == prefix_tags

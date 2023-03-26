@@ -1,6 +1,7 @@
 from __future__ import annotations as _annotations
 
 import re
+import shlex
 from dataclasses import dataclass
 from pathlib import Path
 from textwrap import dedent
@@ -77,12 +78,29 @@ class CodeExample:
 
     def prefix_settings(self) -> dict[str, str]:
         """
-        Key/value pairs from the prefix line
+        Key/value pairs from the prefix line.
+
+        This works on the format `py foo="bar" spam="with space"`.
         """
         settings = {}
         for m in re.finditer(r'(\S+?)=([\'"])(.+?)\2', self.prefix):
             settings[m.group(1)] = m.group(3)
         return settings
+
+    def prefix_tags(self) -> set[str]:
+        """
+        Extract tags from the prefix, alternative logic to `prefix_settings`.
+
+        This works on the format `py .foo .bar` or `{.py .foo .bar}`.
+        """
+        tags = shlex.split(self.prefix.strip(' {}'))
+        tags = {p.lstrip('.') for p in tags if p}
+        try:
+            tags.remove('py')
+        except KeyError:
+            pass
+
+        return tags
 
     def in_py_file(self) -> bool:
         """
@@ -130,14 +148,14 @@ def find_examples(*paths: str, skip: bool = False) -> Iterable[CodeExample]:
                         path, docstring, group, line_offset=start_line, index_offset=index_offset
                     )
             elif path.suffix == '.md':
-                code = path.read_text()
+                code = path.read_text('utf-8')
                 yield from _extract_code_chunks(path, code, group)
 
 
 def _extract_code_chunks(
     path: Path, text: str, group: UUID, *, line_offset: int = 0, index_offset: int = 0
 ) -> Iterable[CodeExample]:
-    for m_code in re.finditer(r'(^ *)```(.*?)$\n(.+?)\1```', text, flags=re.M | re.S):
+    for m_code in re.finditer(r'(^ *)``` *(.*?)$\n(.+?)\1```', text, flags=re.M | re.S):
         prefix = m_code.group(2).lower()
         if prefix.startswith(('py', '{.py')):
             start_line = line_offset + text[: m_code.start()].count('\n') + 1
