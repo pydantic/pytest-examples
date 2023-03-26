@@ -23,8 +23,12 @@ class FormatError(ValueError):
 def ruff_format(
     example: CodeExample,
     config: ExamplesConfig | None,
+    *,
+    ignore_errors: bool = False,
 ) -> str:
     args = ('--fix',)
+    if ignore_errors:
+        args += ('--exit-zero',)
     try:
         return ruff_check(example, config, extra_ruff_args=args)
     except FormatError:
@@ -43,9 +47,7 @@ def ruff_check(
     *,
     extra_ruff_args: tuple[str, ...] = (),
 ) -> str:
-    args = 'ruff', '-', *config.ruff_config()
-
-    args += extra_ruff_args
+    args = 'ruff', '-', *config.ruff_config(), *extra_ruff_args
 
     p = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, universal_newlines=True)
     stdout, stderr = p.communicate(example.source, timeout=2)

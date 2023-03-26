@@ -41,6 +41,7 @@ class EvalExample:
         upgrade: bool = False,
         isort: bool = False,
         ruff_line_length: int | None = None,
+        ruff_select: list[str] | None = None,
         ruff_ignore: list[str] | None = None,
     ):
         """
@@ -53,7 +54,8 @@ class EvalExample:
         :param upgrade: If True, upgrade the code to the target version, defaults to False.
         :param isort: If True, run ruff's isort extension on the code, defaults to False.
         :param ruff_line_length: In general, we disable line-length checks in ruff, to let black take care of them.
-        :param ruff_ignore: Ruff rule to ignore
+        :param ruff_select: Ruff rules to select
+        :param ruff_ignore: Ruff rules to ignore
         """
         self.config = ExamplesConfig(
             line_length=line_length,
@@ -63,6 +65,7 @@ class EvalExample:
             upgrade=upgrade,
             isort=isort,
             ruff_line_length=ruff_line_length,
+            ruff_select=ruff_select,
             ruff_ignore=ruff_ignore,
         )
 

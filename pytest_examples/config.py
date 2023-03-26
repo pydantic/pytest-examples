@@ -26,6 +26,7 @@ class ExamplesConfig:
     upgrade: bool = False
     isort: bool = False
     ruff_line_length: int | None = None
+    ruff_select: list[str] | None = None
     ruff_ignore: list[str] | None = None
 
     def black_mode(self):
@@ -53,6 +54,9 @@ class ExamplesConfig:
             ignore.append('E501')
         else:
             args.append(f'--line-length={self.ruff_line_length}')
+
+        if self.ruff_select:
+            select.extend(self.ruff_select)
 
         if self.quotes == 'single':
             # enforce single quotes using ruff, black will enforce double quotes
