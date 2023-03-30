@@ -116,7 +116,7 @@ class CodeExample:
         return f'{path}:{self.start_line}-{self.end_line}'
 
 
-def find_examples(*paths: str, skip: bool = False) -> Iterable[CodeExample]:
+def find_examples(*paths: str | Path, skip: bool = False) -> Iterable[CodeExample]:
     """
     Find Python code examples in markdown files and python file docstrings.
 
