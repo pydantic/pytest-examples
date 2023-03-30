@@ -30,11 +30,18 @@ d = 4
     pytester.makepyfile(
         # language=Python
         """
+from pathlib import Path
+
 from pytest_examples import find_examples
 import pytest
 
 @pytest.mark.parametrize('example', find_examples('.'), ids=str)
-def test_find_examples(example):
+def test_find_examples_str(example):
+    assert example.indent == 0
+    assert example.end_line == example.start_line + 2
+
+@pytest.mark.parametrize('example', find_examples(Path('.')), ids=str)
+def test_find_examples_path(example):
     assert example.indent == 0
     assert example.end_line == example.start_line + 2
         """
@@ -42,12 +49,16 @@ def test_find_examples(example):
 
     result = pytester.runpytest('-p', 'no:pretty', '-v')
     output = '\n'.join(result.outlines)
-    result.assert_outcomes(passed=4)
+    result.assert_outcomes(passed=8)
 
-    assert 'test_find_examples[my_file.md:3-5] PASSED' in output
-    assert 'test_find_examples[my_file.md:7-9] PASSED' in output
-    assert 'test_find_examples[my_file.md:11-13] PASSED' in output
-    assert 'test_find_examples[my_file.md:15-17] PASSED' in output
+    assert 'test_find_examples_str[my_file.md:3-5] PASSED' in output
+    assert 'test_find_examples_str[my_file.md:7-9] PASSED' in output
+    assert 'test_find_examples_str[my_file.md:11-13] PASSED' in output
+    assert 'test_find_examples_str[my_file.md:15-17] PASSED' in output
+    assert 'test_find_examples_path[my_file.md:3-5] PASSED' in output
+    assert 'test_find_examples_path[my_file.md:7-9] PASSED' in output
+    assert 'test_find_examples_path[my_file.md:11-13] PASSED' in output
+    assert 'test_find_examples_path[my_file.md:15-17] PASSED' in output
 
 
 def test_find_py_example(pytester: pytest.Pytester):
