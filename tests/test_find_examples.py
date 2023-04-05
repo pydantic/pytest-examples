@@ -92,6 +92,15 @@ def func_b():
     ```
     """
     pass
+
+def func_c():
+    """Does cool things.
+    ```py
+    g = 7
+    h = 8
+    assert g + h == 15
+    ```
+    """
         ''',
     )
     pytester.makepyfile(
@@ -107,12 +116,13 @@ def test_find_examples(example):
     )
 
     result = pytester.runpytest('-p', 'no:pretty', '-vs')
-    result.assert_outcomes(passed=3)
+    result.assert_outcomes(passed=4)
 
     output = '\n'.join(result.outlines)
     assert 'test_find_examples[my_file.py:3-7] PASSED' in output
     assert 'test_find_examples[my_file.py:14-18] PASSED' in output
     assert 'test_find_examples[my_file.py:20-24] PASSED' in output
+    assert 'test_find_examples[my_file.py:30-34] PASSED' in output
 
 
 def test_find_file_example(pytester: pytest.Pytester):

@@ -140,7 +140,7 @@ def find_examples(*paths: str | Path, skip: bool = False) -> Iterable[CodeExampl
             group = uuid4()
             if path.suffix == '.py':
                 code = path.read_text('utf-8')
-                for m_docstring in re.finditer(r'(^ *)(r?"""\n)(.+?)\1"""', code, flags=re.M | re.S):
+                for m_docstring in re.finditer(r'(^ *)(r?""".*?\n)(.+?)\1"""', code, flags=re.M | re.S):
                     start_line = code[: m_docstring.start()].count('\n') + 1
                     docstring = m_docstring.group(3)
                     index_offset = m_docstring.start() + len(m_docstring.group(1)) + len(m_docstring.group(2))

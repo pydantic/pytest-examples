@@ -32,3 +32,15 @@ def test_python_self(example: CodeExample, eval_example: EvalExample):
     """
     eval_example.lint(example)
     eval_example.run_print_check(example)
+
+
+@pytest.mark.parametrize('example', find_examples('example/test_example.py'), ids=str)
+def test_python_self_change_docstyle(example: CodeExample, eval_example: EvalExample):
+    """Test this code (no line break at beginning of docstring).
+    ```py
+    print('this is introspection!')
+    #> this is introspection!
+    ```
+    """
+    eval_example.lint(example)
+    eval_example.run_print_check(example)
