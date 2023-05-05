@@ -1,7 +1,7 @@
 from __future__ import annotations as _annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Callable
 
 import pytest
 from _pytest.assertion.rewrite import AssertionRewritingHook
@@ -30,6 +30,7 @@ class EvalExample:
         self._test_id = pytest_request.node.nodeid
         self.to_update: list[CodeExample] = []
         self.config: ExamplesConfig = ExamplesConfig()
+        self.print_callback: Callable[[str], str] | None = None
 
     def set_config(
         self,
@@ -159,7 +160,9 @@ class EvalExample:
             enable_print_mock = False
 
         python_file = self._write_file(example)
-        return run_code(example, python_file, loader, self.config, enable_print_mock, module_globals)
+        return run_code(
+            example, python_file, loader, self.config, enable_print_mock, self.print_callback, module_globals
+        )
 
     def lint(self, example: CodeExample) -> None:
         """

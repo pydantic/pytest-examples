@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from importlib.abc import Loader
 from pathlib import Path
 from textwrap import indent
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Callable
 from unittest.mock import patch
 
 import pytest
@@ -34,6 +34,7 @@ def run_code(
     loader: Loader | None,
     config: ExamplesConfig,
     enable_print_mock: bool,
+    print_callback: Callable[[str], str] | None,
     module_globals: dict[str, Any] | None,
 ) -> tuple[InsertPrintStatements, dict[str, Any]]:
     __tracebackhide__ = True
@@ -42,7 +43,7 @@ def run_code(
     module = importlib.util.module_from_spec(spec)
 
     # does nothing if insert_print_statements is False
-    insert_print = InsertPrintStatements(python_file, config, enable_print_mock)
+    insert_print = InsertPrintStatements(python_file, config, enable_print_mock, print_callback)
 
     if module_globals:
         module.__dict__.update(module_globals)
@@ -123,10 +124,13 @@ class MockPrintFunction:
 
 
 class InsertPrintStatements:
-    def __init__(self, python_path: Path, config: ExamplesConfig, enable: bool):
+    def __init__(
+        self, python_path: Path, config: ExamplesConfig, enable: bool, print_callback: Callable[[str], str] | None
+    ):
         self.file = python_path
         self.config = config
         self.print_func = MockPrintFunction(python_path) if enable else None
+        self.print_callback = print_callback
         self.patch = None
 
     def __enter__(self) -> None:
@@ -176,6 +180,8 @@ class InsertPrintStatements:
         self, lines: list[str], statement: PrintStatement, in_python: bool, line_index: int, col: int
     ) -> None:
         single_line = statement.sep.join(map(str, statement.args))
+        if self.print_callback:
+            single_line = self.print_callback(single_line)
         indent_str = ' ' * col
         max_single_length = self.config.line_length - len(indent_str)
         if '\n' not in single_line and len(single_line) + len(comment_prefix) < max_single_length:
@@ -185,6 +191,8 @@ class InsertPrintStatements:
             sep = f'{statement.sep}\n'
             indent_config = dataclasses.replace(self.config, line_length=max_single_length)
             output = sep.join(arg.format(indent_config).strip('\n') for arg in statement.args)
+            if self.print_callback:
+                output = self.print_callback(output)
             # remove trailing whitespace
             output = re.sub(r' +$', '', output, flags=re.MULTILINE)
             # have to use triple single quotes in python since we're already in a double quotes docstring

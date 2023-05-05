@@ -248,3 +248,52 @@ div(0)"""
 
     assert exc_info.traceback[-2].frame.code.path == md_file
     assert exc_info.traceback[-2].lineno == 9
+
+
+def test_print_sub(pytester: pytest.Pytester):
+    pytester.makefile(
+        '.md',
+        # language=Markdown
+        my_file='''
+# My file
+
+```py
+print('hello')
+#> hello
+print('1/2/3')
+#> X/X/X
+print({f'{i} key': i for i in range(8)})
+"""
+{
+    'X key': X,
+    'X key': X,
+    'X key': X,
+    'X key': X,
+    'X key': X,
+    'X key': X,
+    'X key': X,
+    'X key': X,
+}
+"""
+```
+        ''',
+    )
+    # language=Python
+    pytester.makepyfile(
+        r"""
+import re
+from pytest_examples import find_examples, CodeExample, EvalExample
+import pytest
+
+def print_sub(print_statement):
+    return re.sub(r'[0-9]+', 'X', print_statement)
+
+@pytest.mark.parametrize('example', find_examples('.'), ids=str)
+def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
+    eval_example.print_callback = print_sub
+    eval_example.run_print_check(example, rewrite_assertions=False)
+"""
+    )
+
+    result = pytester.runpytest('-p', 'no:pretty', '-v')
+    result.assert_outcomes(passed=1)
