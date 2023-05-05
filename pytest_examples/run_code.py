@@ -191,6 +191,8 @@ class InsertPrintStatements:
             sep = f'{statement.sep}\n'
             indent_config = dataclasses.replace(self.config, line_length=max_single_length)
             output = sep.join(arg.format(indent_config).strip('\n') for arg in statement.args)
+            if self.print_callback:
+                output = self.print_callback(output)
             # remove trailing whitespace
             output = re.sub(r' +$', '', output, flags=re.MULTILINE)
             # have to use triple single quotes in python since we're already in a double quotes docstring

@@ -254,7 +254,7 @@ def test_print_sub(pytester: pytest.Pytester):
     pytester.makefile(
         '.md',
         # language=Markdown
-        my_file="""
+        my_file='''
 # My file
 
 ```py
@@ -262,8 +262,21 @@ print('hello')
 #> hello
 print('1/2/3')
 #> X/X/X
+print({f'{i} key': i for i in range(8)})
+"""
+{
+    'X key': X,
+    'X key': X,
+    'X key': X,
+    'X key': X,
+    'X key': X,
+    'X key': X,
+    'X key': X,
+    'X key': X,
+}
+"""
 ```
-        """,
+        ''',
     )
     # language=Python
     pytester.makepyfile(
