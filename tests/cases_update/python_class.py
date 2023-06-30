@@ -16,8 +16,10 @@ def foobar():
     ```py
     x = 4
 
+
     class A:
         pass
+
 
     print(x)
     #> 4

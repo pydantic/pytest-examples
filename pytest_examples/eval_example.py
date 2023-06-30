@@ -217,7 +217,7 @@ class EvalExample:
         """
         self._check_update(example)
 
-        new_content = black_format(example.source, self.config, remove_double_blank=example.in_py_file())
+        new_content = black_format(example.source, self.config)
         if new_content != example.source:
             example.source = new_content
             self._mark_for_update(example)
