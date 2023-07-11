@@ -125,6 +125,71 @@ def test_find_examples(example):
     assert 'test_find_examples[my_file.py:30-34] PASSED' in output
 
 
+def test_find_py_example_with_module_docstring(pytester: pytest.Pytester):
+    pytester.makefile(
+        '.py',
+        # language=Python
+        my_file='''
+"""Module docstring."""
+def func_a():
+    """
+    ```py
+    a = 1
+    b = 2
+    assert a + b == 3
+    ```
+    """
+    pass
+
+
+def func_b():
+    """
+    ```py
+    c = 3
+    d = 4
+    assert c + d == 7
+    ```
+
+    ```py
+    e = 5
+    f = 6
+    assert e + f == 11
+    ```
+    """
+    pass
+
+def func_c():
+    """Does cool things.
+    ```py
+    g = 7
+    h = 8
+    assert g + h == 15
+    ```
+    """
+        ''',
+    )
+    pytester.makepyfile(
+        # language=Python
+        """
+from pytest_examples import find_examples
+import pytest
+
+@pytest.mark.parametrize('example', find_examples('.'), ids=str)
+def test_find_examples(example):
+    assert example.indent == 4
+        """
+    )
+
+    result = pytester.runpytest('-p', 'no:pretty', '-vs')
+    result.assert_outcomes(passed=4)
+
+    output = '\n'.join(result.outlines)
+    assert 'test_find_examples[my_file.py:4-8] PASSED' in output
+    assert 'test_find_examples[my_file.py:15-19] PASSED' in output
+    assert 'test_find_examples[my_file.py:21-25] PASSED' in output
+    assert 'test_find_examples[my_file.py:31-35] PASSED' in output
+
+
 def test_find_file_example(pytester: pytest.Pytester):
     pytester.makefile(
         '.md',
