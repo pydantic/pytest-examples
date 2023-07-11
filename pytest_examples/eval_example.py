@@ -206,8 +206,8 @@ class EvalExample:
 
         :param example: The example to format.
         """
-        self.format_black(example)
         self.format_ruff(example)
+        self.format_black(example)
 
     def format_black(self, example: CodeExample) -> None:
         """
@@ -217,7 +217,7 @@ class EvalExample:
         """
         self._check_update(example)
 
-        new_content = black_format(example.source, self.config)
+        new_content = black_format(example.source, self.config, remove_double_blank=example.in_py_file())
         if new_content != example.source:
             example.source = new_content
             self._mark_for_update(example)

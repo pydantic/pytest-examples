@@ -65,17 +65,19 @@ def ruff_check(
         return stdout
 
 
-def black_format(source: str, config: ExamplesConfig) -> str:
+def black_format(source: str, config: ExamplesConfig, *, remove_double_blank: bool = False) -> str:
     # hack to avoid black complaining about our print output format
     before_black = re.sub(r'^( *#)> ', r'\1 > ', source, flags=re.M)
     after_black = black_format_str(before_black, mode=config.black_mode())
     # then revert it back
     after_black = re.sub(r'^( *#) > ', r'\1> ', after_black, flags=re.M)
+    if remove_double_blank:
+        after_black = re.sub(r'\n{3}', '\n\n', after_black)
     return after_black
 
 
 def black_check(example: CodeExample, config: ExamplesConfig) -> None:
-    after_black = black_format(example.source, config)
+    after_black = black_format(example.source, config, remove_double_blank=example.in_py_file())
     if example.source != after_black:
         diff = code_diff(example, after_black)
         raise FormatError(f'black failed:\n{indent(diff, "  ")}')
