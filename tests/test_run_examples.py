@@ -224,7 +224,10 @@ def test_run_directly(tmp_path, eval_example):
 x = 4
 
 def div(y):
-    return x / y
+    try:
+        return x / y
+    finally:
+        str(y)
 
 div(2)
 div(0)"""
@@ -244,10 +247,10 @@ div(0)"""
 
     # debug(exc_info.traceback)
     assert exc_info.traceback[-1].frame.code.path == md_file
-    assert exc_info.traceback[-1].lineno == 6
+    assert exc_info.traceback[-1].lineno == 7
 
     assert exc_info.traceback[-2].frame.code.path == md_file
-    assert exc_info.traceback[-2].lineno == 9
+    assert exc_info.traceback[-2].lineno == 12
 
 
 def test_print_sub(pytester: pytest.Pytester):
