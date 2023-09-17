@@ -36,12 +36,10 @@ def create_example_traceback(exc: Exception, module_path: str, example: CodeExam
 
 def create_custom_frame(frame: FrameType, example: CodeExample) -> FrameType:
     """
-    Create a new frame that mostly matches `frame` but with a filename from `example` and line number
-    altered to match the example.
+    Create a new frame that mostly matches `frame` but with a filename from `example`.
 
     Taken mostly from https://naleraphael.github.io/blog/posts/devlog_create_a_builtin_frame_object/
-    With the CodeType creation inspired by https://stackoverflow.com/a/16123158/949890. However, we use
-    `frame.f_lineno` for the line number instead of `f_code.co_firstlineno` as that seems to work.
+    With the CodeType creation inspired by https://stackoverflow.com/a/16123158/949890.
     """
     import ctypes
 
@@ -77,7 +75,7 @@ def create_custom_frame(frame: FrameType, example: CodeExample) -> FrameType:
             str(example.path),
             f_code.co_name,
             f_code.co_qualname,
-            frame.f_lineno + example.start_line,
+            f_code.co_firstlineno,
             f_code.co_lnotab,
             f_code.co_exceptiontable,
         )
@@ -95,7 +93,7 @@ def create_custom_frame(frame: FrameType, example: CodeExample) -> FrameType:
             f_code.co_varnames,
             str(example.path),
             f_code.co_name,
-            frame.f_lineno + example.start_line,
+            f_code.co_firstlineno,
             f_code.co_lnotab,
         )
 
