@@ -76,6 +76,10 @@ class CodeExample:
         """
         return f'{self.path.stem}_{self.start_line}_{self.end_line}'
 
+    @property
+    def line_adjusted_source(self) -> str:
+        return '# ...\n' * self.start_line + self.source
+
     def prefix_settings(self) -> dict[str, str]:
         """
         Key/value pairs from the prefix line.

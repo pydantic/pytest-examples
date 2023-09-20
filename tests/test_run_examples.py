@@ -54,7 +54,7 @@ def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
 
     # assert 'my_file_9_13.py:12: AssertionError' in '\n'.join(result.outlines)
     assert result.outlines[-8:-3] == [
-        '',
+        '    b = 2',
         '>   assert a + b == 4',
         'E   AssertionError',
         '',

@@ -6,6 +6,7 @@ import importlib.util
 import inspect
 import re
 import sys
+from copy import deepcopy
 from dataclasses import dataclass
 from importlib.abc import Loader
 from pathlib import Path
@@ -14,10 +15,10 @@ from typing import TYPE_CHECKING, Any, Callable
 from unittest.mock import patch
 
 import pytest
+from _pytest.assertion.rewrite import AssertionRewritingHook
 from black import InvalidInput
 
 from .lint import black_format, code_diff
-from .traceback import create_example_traceback
 
 if TYPE_CHECKING:
     from .config import ExamplesConfig
@@ -45,6 +46,7 @@ def run_code(
     # does nothing if insert_print_statements is False
     insert_print = InsertPrintStatements(python_file, config, enable_print_mock, print_callback)
 
+    module_globals = deepcopy(module_globals)
     if module_globals:
         module.__dict__.update(module_globals)
     try:
@@ -53,11 +55,24 @@ def run_code(
     except KeyboardInterrupt:
         print('KeyboardInterrupt in example')
     except Exception as exc:
-        example_tb = create_example_traceback(exc, str(python_file), example)
-        if example_tb:
-            raise exc.with_traceback(example_tb)
-        else:
-            raise exc
+        # Rerun the code but using a code object with the example filename,
+        # so that the traceback points there.
+        # (The only reason we can't do this in the first place is that
+        # pytest's public assertion rewriting API doesn't work with code objects.)
+        try:
+            code = compile(example.line_adjusted_source, str(example.path), 'exec')
+            with insert_print:
+                exec(code, {**(module_globals or {}), '__name__': '__main__'})
+        except KeyboardInterrupt:
+            print('KeyboardInterrupt in example')
+        except Exception as exc2:
+            # If the exception is the same, raise the original exception with the traceback of the second,
+            # TODO test failing this check
+            if str(exc) == str(exc2) or (
+                type(exc) == type(exc2) == AssertionError and isinstance(loader, AssertionRewritingHook)
+            ):
+                raise exc.with_traceback(exc2.__traceback__)
+        raise
 
     return insert_print, {k: v for k, v in module.__dict__.items() if not k.startswith(('__', '@'))}
 
@@ -164,7 +179,7 @@ class InsertPrintStatements:
         old_line_no = -1
 
         for s in reversed(self.print_func.statements):
-            line_no, col = find_print_location(example, s.line_no)
+            line_no, col = find_print_location(example, s.line_no - example.start_line)
 
             # switch from 1-indexed line number to 0-indexed indexes into lines
             line_index = line_no - 1
