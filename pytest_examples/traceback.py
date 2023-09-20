@@ -36,7 +36,9 @@ def create_example_traceback(exc: Exception, module_path: str, example: CodeExam
 
 def create_custom_frame(frame: FrameType, example: CodeExample) -> FrameType:
     """
-    Create a new frame that mostly matches `frame` but with a filename from `example`.
+    Create a new frame that mostly matches `frame` but with a code object that has
+    a filename from `example` and adjusted an adjusted first line number
+    so that pytest shows the correct code context in the traceback.
 
     Taken mostly from https://naleraphael.github.io/blog/posts/devlog_create_a_builtin_frame_object/
     With the CodeType creation inspired by https://stackoverflow.com/a/16123158/949890.
@@ -75,7 +77,7 @@ def create_custom_frame(frame: FrameType, example: CodeExample) -> FrameType:
             str(example.path),
             f_code.co_name,
             f_code.co_qualname,
-            f_code.co_firstlineno,
+            f_code.co_firstlineno + example.start_line,
             f_code.co_lnotab,
             f_code.co_exceptiontable,
         )
@@ -93,7 +95,7 @@ def create_custom_frame(frame: FrameType, example: CodeExample) -> FrameType:
             f_code.co_varnames,
             str(example.path),
             f_code.co_name,
-            f_code.co_firstlineno,
+            f_code.co_firstlineno + example.start_line,
             f_code.co_lnotab,
         )
 

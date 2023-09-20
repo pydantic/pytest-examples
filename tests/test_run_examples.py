@@ -52,8 +52,10 @@ def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
     result = pytester.runpytest('-p', 'no:pretty', '-v')
     result.assert_outcomes(passed=1, failed=1)
 
-    # assert 'my_file_9_13.py:12: AssertionError' in '\n'.join(result.outlines)
-    assert result.outlines[-8:-3] == [
+    assert result.outlines[-11:-3] == [
+        '_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ',
+        '',
+        '    a = 1',
         '    b = 2',
         '>   assert a + b == 4',
         'E   AssertionError',
