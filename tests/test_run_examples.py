@@ -52,8 +52,8 @@ def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
     result = pytester.runpytest('-p', 'no:pretty', '-v')
     result.assert_outcomes(passed=1, failed=1)
 
-    assert result.outlines[-11:-3] == [
-        '_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ',
+    assert result.outlines[-11].startswith('_ _ _ _ ')
+    assert result.outlines[-10:-3] == [
         '',
         '    a = 1',
         '    b = 2',
