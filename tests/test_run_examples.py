@@ -52,9 +52,11 @@ def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
     result = pytester.runpytest('-p', 'no:pretty', '-v')
     result.assert_outcomes(passed=1, failed=1)
 
-    # assert 'my_file_9_13.py:12: AssertionError' in '\n'.join(result.outlines)
-    assert result.outlines[-8:-3] == [
+    assert result.outlines[-11].startswith('_ _ _ _ ')
+    assert result.outlines[-10:-3] == [
         '',
+        '    a = 1',
+        '    b = 2',
         '>   assert a + b == 4',
         'E   AssertionError',
         '',
@@ -224,7 +226,10 @@ def test_run_directly(tmp_path, eval_example):
 x = 4
 
 def div(y):
-    return x / y
+    try:
+        return x / y
+    finally:
+        str(y)
 
 div(2)
 div(0)"""
@@ -244,10 +249,10 @@ div(0)"""
 
     # debug(exc_info.traceback)
     assert exc_info.traceback[-1].frame.code.path == md_file
-    assert exc_info.traceback[-1].lineno == 6
+    assert exc_info.traceback[-1].lineno == 7
 
     assert exc_info.traceback[-2].frame.code.path == md_file
-    assert exc_info.traceback[-2].lineno == 9
+    assert exc_info.traceback[-2].lineno == 12
 
 
 def test_print_sub(pytester: pytest.Pytester):

@@ -1,7 +1,6 @@
 from __future__ import annotations as _annotations
 
 import sys
-import traceback
 from types import CodeType, FrameType, TracebackType
 from typing import TYPE_CHECKING
 
@@ -21,27 +20,28 @@ def create_example_traceback(exc: Exception, module_path: str, example: CodeExam
         # f_code.co_posonlyargcount was added in 3.8
         return None
     frames = []
-    for frame, _ in traceback.walk_tb(exc.__traceback__):
+    tb = exc.__traceback__
+    while tb is not None:
+        frame = tb.tb_frame
         if frame.f_code.co_filename == module_path:
-            frames.append(create_custom_frame(frame, example))
+            frames.append((create_custom_frame(frame, example), tb.tb_lasti, tb.tb_lineno + example.start_line))
+        tb = tb.tb_next
 
     frames.reverse()
     new_tb = None
-    for altered_frame in frames:
-        new_tb = TracebackType(
-            tb_next=new_tb, tb_frame=altered_frame, tb_lasti=altered_frame.f_lasti, tb_lineno=altered_frame.f_lineno
-        )
+    for altered_frame, lasti, lineno in frames:
+        new_tb = TracebackType(tb_next=new_tb, tb_frame=altered_frame, tb_lasti=lasti, tb_lineno=lineno)
     return new_tb
 
 
 def create_custom_frame(frame: FrameType, example: CodeExample) -> FrameType:
     """
-    Create a new frame that mostly matches `frame` but with a filename from `example` and line number
-    altered to match the example.
+    Create a new frame that mostly matches `frame` but with a code object that has
+    a filename from `example` and adjusted an adjusted first line number
+    so that pytest shows the correct code context in the traceback.
 
     Taken mostly from https://naleraphael.github.io/blog/posts/devlog_create_a_builtin_frame_object/
-    With the CodeType creation inspired by https://stackoverflow.com/a/16123158/949890. However, we use
-    `frame.f_lineno` for the line number instead of `f_code.co_firstlineno` as that seems to work.
+    With the CodeType creation inspired by https://stackoverflow.com/a/16123158/949890.
     """
     import ctypes
 
@@ -77,7 +77,7 @@ def create_custom_frame(frame: FrameType, example: CodeExample) -> FrameType:
             str(example.path),
             f_code.co_name,
             f_code.co_qualname,
-            frame.f_lineno + example.start_line,
+            f_code.co_firstlineno + example.start_line,
             f_code.co_lnotab,
             f_code.co_exceptiontable,
         )
@@ -95,7 +95,7 @@ def create_custom_frame(frame: FrameType, example: CodeExample) -> FrameType:
             f_code.co_varnames,
             str(example.path),
             f_code.co_name,
-            frame.f_lineno + example.start_line,
+            f_code.co_firstlineno + example.start_line,
             f_code.co_lnotab,
         )
 
