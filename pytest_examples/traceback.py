@@ -62,7 +62,26 @@ def create_custom_frame(frame: FrameType, example: CodeExample) -> FrameType:
     ctypes.pythonapi.PyThreadState_Get.restype = P_MEM_TYPE
 
     f_code = frame.f_code
-    if sys.version_info >= (3, 11):
+    if sys.version_info >= (3, 12):
+        code = CodeType(
+            f_code.co_argcount,
+            f_code.co_posonlyargcount,
+            f_code.co_kwonlyargcount,
+            f_code.co_nlocals,
+            f_code.co_stacksize,
+            f_code.co_flags,
+            f_code.co_code,
+            f_code.co_consts,
+            f_code.co_names,
+            f_code.co_varnames,
+            str(example.path),
+            f_code.co_name,
+            f_code.co_qualname,
+            f_code.co_firstlineno + example.start_line,
+            f_code.co_linetable,
+            f_code.co_exceptiontable,
+        )
+    elif sys.version_info >= (3, 11):
         code = CodeType(
             f_code.co_argcount,
             f_code.co_posonlyargcount,
