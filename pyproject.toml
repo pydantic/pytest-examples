@@ -13,6 +13,7 @@ include = [
     '/Makefile',
     '/pytest_examples',
     '/requirements',
+    '/tests',
 ]
 
 [project]
