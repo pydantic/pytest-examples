@@ -23,12 +23,12 @@ update-lockfiles:
 
 .PHONY: format
 format:
-	black $(sources)
+	ruff format $(sources)
 	ruff $(sources) --fix --exit-zero
 
 .PHONY: lint
 lint:
-	black $(sources) --check --diff
+	ruff format $(sources) --check
 	ruff $(sources)
 
 .PHONY: test

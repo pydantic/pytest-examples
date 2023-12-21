@@ -16,15 +16,18 @@ def create_example_traceback(exc: Exception, module_path: str, example: CodeExam
 
     Frames outside the example are not included in the new traceback.
     """
-    if sys.version_info < (3, 8):
-        # f_code.co_posonlyargcount was added in 3.8
-        return None
     frames = []
     tb = exc.__traceback__
     while tb is not None:
         frame = tb.tb_frame
         if frame.f_code.co_filename == module_path:
-            frames.append((create_custom_frame(frame, example), tb.tb_lasti, tb.tb_lineno + example.start_line))
+            frames.append(
+                (
+                    create_custom_frame(frame, example),
+                    tb.tb_lasti,
+                    tb.tb_lineno + example.start_line,
+                )
+            )
         tb = tb.tb_next
 
     frames.reverse()

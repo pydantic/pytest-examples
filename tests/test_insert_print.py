@@ -162,12 +162,14 @@ x = 123
     pytest.param(
         # language=Python
         '''\
-print({i: f'i value is {i}' for i in range(3)})
+print({i: f'i value is {i}' for i in range(5)})
 """
 {
     0: 'i value is 0',
     1: 'i value is 1',
     2: 'i value is 2',
+    3: 'i value is 3',
+    4: 'i value is 4',
 }
 """
 ''',
@@ -188,11 +190,7 @@ if True:
 if True:
     print(['x' * i * 8 for i in range(3)])
     """
-    [
-        '',
-        'xxxxxxxx',
-        'xxxxxxxxxxxxxxxx',
-    ]
+    ['', 'xxxxxxxx', 'xxxxxxxxxxxxxxxx']
     """
 ''',
         id='multi-line-indent',
@@ -227,12 +225,7 @@ print(
     ]
 )
 """
-[
-    'abcdefghij',
-    'abcdefghijk',
-    'abcdefghijkl',
-    'abcdefghijklm',
-]
+['abcdefghij', 'abcdefghijk', 'abcdefghijkl', 'abcdefghijklm']
 """
 ''',
         id='multiline-comprehension',
@@ -270,11 +263,7 @@ if True:
             """
             print([1_000_000, 2_000_000, 3_000_000])
             """
-            [
-                1000000,
-                2000000,
-                3000000,
-            ]
+            [1000000, 2000000, 3000000]
             """
 ''',
         id='big-indent',

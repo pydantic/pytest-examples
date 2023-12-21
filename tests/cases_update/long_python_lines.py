@@ -1,7 +1,7 @@
 def foobar():
     """
     ```py
-    print({i: 'x' * (5 * i) for i in range(3)})
+    print({very_long_variable_name: 'x' * (25 * very_long_variable_name) for very_long_variable_name in range(3)})
     ```
     """
     pass
@@ -9,17 +9,15 @@ def foobar():
 def foobar():
     """
     ```py
-    print(
-        {
-            i: 'x' * (5 * i)
-            for i in range(3)
-        }
-    )
+    print({
+        very_long_variable_name: 'x' * (25 * very_long_variable_name)
+        for very_long_variable_name in range(3)
+    })
     '''
     {
         0: '',
-        1: 'xxxxx',
-        2: 'xxxxxxxxxx',
+        1: 'xxxxxxxxxxxxxxxxxxxxxxxxx',
+        2: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     }
     '''
     ```

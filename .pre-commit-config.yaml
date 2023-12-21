@@ -16,9 +16,10 @@ repos:
     types: [python]
     language: system
     exclude: cases_update
-  - id: black
-    name: Black
-    entry: black
+  - id: ruff format
+    name: Ruff Format
+    entry: ruff
     types: [python]
+    args: [format]
     language: system
     exclude: cases_update

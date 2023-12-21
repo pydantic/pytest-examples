@@ -8,7 +8,7 @@ from _pytest.assertion.rewrite import AssertionRewritingHook
 from _pytest.outcomes import Failed as PytestFailed
 
 from .config import DEFAULT_LINE_LENGTH, ExamplesConfig
-from .lint import FormatError, black_check, black_format, ruff_check, ruff_format
+from .lint import FormatError, ruff_check, ruff_fix, ruff_format
 from .run_code import InsertPrintStatements, run_code
 
 if TYPE_CHECKING:
@@ -166,31 +166,7 @@ class EvalExample:
 
     def lint(self, example: CodeExample) -> None:
         """
-        Lint the example with black and ruff.
-
-        :param example: The example to lint.
-        """
-        self.lint_black(example)
-        self.lint_ruff(example)
-
-    def lint_black(self, example: CodeExample) -> None:
-        """
-        Lint the example using black.
-
-        :param example: The example to lint.
-        """
-        example.test_id = self._test_id
-        try:
-            black_check(example, self.config)
-        except FormatError as exc:
-            raise PytestFailed(str(exc), pytrace=False) from None
-
-    def lint_ruff(
-        self,
-        example: CodeExample,
-    ) -> None:
-        """
-        Lint the example using ruff.
+        Lint the example with ruff.
 
         :param example: The example to lint.
         """
@@ -202,39 +178,15 @@ class EvalExample:
 
     def format(self, example: CodeExample) -> None:
         """
-        Format the example with black and ruff, requires `--update-examples`.
+        Format the example with ruff, requires `--update-examples`.
 
         :param example: The example to format.
-        """
-        self.format_ruff(example)
-        self.format_black(example)
-
-    def format_black(self, example: CodeExample) -> None:
-        """
-        Format the example using black, requires `--update-examples`.
-
-        :param example: The example to lint.
-        """
-        self._check_update(example)
-
-        new_content = black_format(example.source, self.config, remove_double_blank=example.in_py_file())
-        if new_content != example.source:
-            example.source = new_content
-            self._mark_for_update(example)
-
-    def format_ruff(
-        self,
-        example: CodeExample,
-    ) -> None:
-        """
-        Format the example using ruff, requires `--update-examples`.
-
-        :param example: The example to lint.
         """
         self._check_update(example)
 
         try:
-            new_content = ruff_format(example, self.config)
+            new_content = ruff_fix(example, self.config)
+            new_content = ruff_format(new_content, self.config, remove_double_blank=example.in_py_file())
         except FormatError as exc:
             raise PytestFailed(str(exc), pytrace=False) from None
         else:

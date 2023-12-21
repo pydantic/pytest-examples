@@ -49,18 +49,8 @@ print(b'hello world')
 ```py
 import string
 
-print(
-    [
-        string.ascii_letters[: i + 10]
-        for i in range(4)
-    ]
-)
+print([string.ascii_letters[: i + 10] for i in range(4)])
 """
-[
-    'abcdefghij',
-    'abcdefghijk',
-    'abcdefghijkl',
-    'abcdefghijklm',
-]
+['abcdefghij', 'abcdefghijk', 'abcdefghijkl', 'abcdefghijklm']
 """
 ```
