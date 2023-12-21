@@ -125,7 +125,11 @@ class MockPrintFunction:
 
 class InsertPrintStatements:
     def __init__(
-        self, python_path: Path, config: ExamplesConfig, enable: bool, print_callback: Callable[[str], str] | None
+        self,
+        python_path: Path,
+        config: ExamplesConfig,
+        enable: bool,
+        print_callback: Callable[[str], str] | None,
     ):
         self.file = python_path
         self.config = config
@@ -177,7 +181,12 @@ class InsertPrintStatements:
         return '\n'.join(lines) + '\n'
 
     def _insert_print_args(
-        self, lines: list[str], statement: PrintStatement, in_python: bool, line_index: int, col: int
+        self,
+        lines: list[str],
+        statement: PrintStatement,
+        in_python: bool,
+        line_index: int,
+        col: int,
     ) -> None:
         single_line = statement.sep.join(map(str, statement.args))
         if self.print_callback:
@@ -203,21 +212,6 @@ class InsertPrintStatements:
 comment_prefix = '#> '
 comment_prefix_re = re.compile(f'^ *{re.escape(comment_prefix)}', re.MULTILINE)
 triple_quotes_prefix_re = re.compile('^ *(?:"{3}|\'{3})', re.MULTILINE)
-
-
-def find_print_line(lines: list[str], line_no: int) -> int:
-    """
-    For 3.7 we have to reverse through lines to find the print statement lint
-    """
-    if sys.version_info >= (3, 8):
-        return line_no
-
-    for back in range(100):
-        new_line_no = line_no - back
-        m = re.search(r'^ *print\(', lines[new_line_no - 1])
-        if m:
-            return new_line_no
-    return line_no
 
 
 def remove_old_print(lines: list[str], line_index: int) -> None:
@@ -253,17 +247,6 @@ def find_print_location(example: CodeExample, line_no: int) -> tuple[int, int]:
     :param line_no: The line number on which the print statement starts (or approx on 3.7)
     :return: tuple if `(line, column)` of the print statement
     """
-    # For 3.7 we have to reverse through lines to find the print statement lint
-    if sys.version_info < (3, 8):
-        # find the last print statement before the line
-        lines = example.source.splitlines()
-        for back in range(100):
-            new_line_no = line_no - back
-            m = re.match(r' *print\(', lines[new_line_no - 1])
-            if m:
-                line_no = new_line_no
-                break
-
     m = ast.parse(example.source, filename=example.path.name)
     return find_print(m, line_no) or (line_no, 0)
 
