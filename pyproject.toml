@@ -71,7 +71,7 @@ isort = { known-first-party = ['pytest_examples'] }
 target-version = 'py38'
 
 [tool.ruff.format]
-quote-style = "single"
+quote-style = 'single'
 
 [tool.coverage.run]
 source = ['pytest_examples']
