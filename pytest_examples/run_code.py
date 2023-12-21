@@ -16,7 +16,7 @@ from unittest.mock import patch
 import pytest
 from black import InvalidInput
 
-from .lint import black_format, code_diff
+from .lint import code_diff, ruff_format
 from .traceback import create_example_traceback
 
 if TYPE_CHECKING:
@@ -88,7 +88,7 @@ class Arg:
             return self.string
         else:
             try:
-                return black_format(self.code, config)
+                return ruff_format(self.code, config)
             except InvalidInput:
                 return self.code
 

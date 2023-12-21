@@ -43,9 +43,9 @@ class ExamplesConfig:
 
     def ruff_config(self) -> tuple[str, ...]:
         config_lines = []
+        format_config_lines = []
         select = []
         ignore = []
-        args = []
 
         # line length is enforced by black
         if self.ruff_line_length is None:
@@ -53,18 +53,21 @@ class ExamplesConfig:
             # by default, ruff sets the line length to 88
             ignore.append('E501')
         else:
-            args.append(f'--line-length={self.ruff_line_length}')
+            config_lines.append(f'line-length = {self.ruff_line_length}')
 
         if self.ruff_select:
             select.extend(self.ruff_select)
 
-        if self.quotes == 'single':
-            # enforce single quotes using ruff, black will enforce double quotes
+        if self.quotes != 'either':
             select.append('Q')
-            config_lines.append("flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}")
+            config_lines.append(f"flake8-quotes = {{inline-quotes = '{self.quotes}', multiline-quotes = 'double'}}")
+            format_config_lines.append(f"quote-style = '{self.quotes}'")
+        else:
+            format_config_lines.append('preview = true')
+            format_config_lines.append("quote-style = 'preserve'")
 
         if self.target_version:
-            args.append(f'--target-version={self.target_version}')
+            config_lines.append(f"target-version = '{self.target_version}'")
 
         if self.upgrade:
             select.append('UP')
@@ -76,9 +79,13 @@ class ExamplesConfig:
 
         if select:
             # use extend to not disable default select
-            args.append(f'--extend-select={",".join(select)}')
+            config_lines.append(f'extend-select = [{",".join(f"'{s}'" for s in select)}]')
         if ignore:
-            args.append(f'--ignore={",".join(ignore)}')
+            config_lines.append(f'ignore = [{",".join(f"'{i}'" for i in ignore)}]')
+
+        if format_config_lines:
+            config_lines.append('[format]')
+            config_lines.extend(format_config_lines)
 
         if config_lines:
             config_toml = '\n'.join(config_lines)
@@ -87,6 +94,6 @@ class ExamplesConfig:
                 config_file.parent.mkdir(parents=True, exist_ok=True)
                 config_file.write_text(config_toml)
 
-            args.append(f'--config={config_file}')
+            return (f'--config={config_file}',)
 
-        return tuple(args)
+        return ()

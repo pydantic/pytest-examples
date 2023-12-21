@@ -46,7 +46,6 @@ requires-python = '>=3.8'
 dynamic = ['version']
 dependencies = [
     'pytest>=7',
-    'black>=23',
     'ruff>=0.1,<0.2',
 ]
 

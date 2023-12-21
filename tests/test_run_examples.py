@@ -67,7 +67,7 @@ def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
 def test_ruff_ok(pytester: pytest.Pytester):
     pytester.makefile(
         '.md',
-        my_file='```py\nimport sys\nprint(sys.platform)\n```',
+        my_file='```py\nimport sys\n\nprint(sys.platform)\n```',
     )
     # language=Python
     pytester.makepyfile(
@@ -77,7 +77,7 @@ import pytest
 
 @pytest.mark.parametrize('example', find_examples('.'), ids=str)
 def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
-    eval_example.lint_ruff(example)
+    eval_example.lint(example)
 """
     )
 
@@ -98,7 +98,7 @@ import pytest
 
 @pytest.mark.parametrize('example', find_examples('.'), ids=str)
 def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
-    eval_example.lint_ruff(example)
+    eval_example.lint(example)
 """
     )
 
@@ -132,7 +132,7 @@ import pytest
 
 @pytest.mark.parametrize('example', find_examples('.'), ids=str)
 def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
-    eval_example.lint_black(example)
+    eval_example.lint(example)
 """
     )
 
@@ -153,7 +153,7 @@ import pytest
 
 @pytest.mark.parametrize('example', find_examples('.'), ids=str)
 def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
-    eval_example.lint_black(example)
+    eval_example.lint(example)
 """
     )
 
@@ -164,7 +164,7 @@ def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
     failures_end = next(index for index, line in enumerate(result.outlines) if 'short test summary' in line)
     e_lines = [line.strip() for line in result.outlines[failures_start + 2 : failures_end]]
     assert e_lines == [
-        'black failed:',
+        'ruff failed:',
         '--- before',
         '+++ after',
         '@@ -4 +4 @@',
@@ -195,7 +195,7 @@ import pytest
 
 @pytest.mark.parametrize('example', find_examples('.'), ids=str)
 def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
-    eval_example.lint_black(example)
+    eval_example.lint(example)
 """
     )
 
@@ -206,7 +206,7 @@ def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
     failures_end = next(index for index, line in enumerate(result.outlines) if 'short test summary' in line)
     e_lines = [line.strip() for line in result.outlines[failures_start + 2 : failures_end]]
     assert e_lines == [
-        'black failed:',
+        'ruff failed:',
         '--- before',
         '+++ after',
         '@@ -4,8 +4 @@',

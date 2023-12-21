@@ -1,36 +1,27 @@
 from __future__ import annotations as _annotations
 
+import difflib
 import re
 from subprocess import PIPE, Popen
 from textwrap import indent
-from typing import TYPE_CHECKING
-
-from black import format_str as black_format_str
-from black.output import diff as black_diff
+from typing import TYPE_CHECKING, Literal
 
 from .config import ExamplesConfig
 
 if TYPE_CHECKING:
     from .find_examples import CodeExample
 
-__all__ = 'ruff_check', 'ruff_format', 'black_check', 'black_format', 'code_diff', 'FormatError'
+__all__ = 'ruff_check', 'ruff_format', 'code_diff', 'FormatError'
 
 
 class FormatError(ValueError):
     pass
 
 
-def ruff_format(
-    example: CodeExample,
-    config: ExamplesConfig | None,
-    *,
-    ignore_errors: bool = False,
-) -> str:
-    args = ('--fix',)
-    if ignore_errors:
-        args += ('--exit-zero',)
+def ruff_fix(example: CodeExample, config: ExamplesConfig, ignore_errors: bool = False) -> str:
+    extra_args = ('--exit-zero',) if ignore_errors else ()
     try:
-        return ruff_check(example, config, extra_ruff_args=args)
+        return _invoke_ruff('check', example.source, config, extra_ruff_args=('--fix', *extra_args))
     except FormatError:
         # this is a workaround for https://github.com/charliermarsh/ruff/issues/3694#issuecomment-1483388856
         try:
@@ -41,50 +32,86 @@ def ruff_format(
             raise Exception('ruff failed in Fix mode but not in Check mode, please report this')
 
 
-def ruff_check(
-    example: CodeExample,
-    config: ExamplesConfig,
-    *,
-    extra_ruff_args: tuple[str, ...] = (),
-) -> str:
-    args = 'ruff', '-', *config.ruff_config(), *extra_ruff_args
+def ruff_format(source: str, config: ExamplesConfig, remove_double_blank: bool = False) -> str:
+    return _invoke_ruff('format', source, config, remove_double_blank=remove_double_blank)
 
-    p = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, universal_newlines=True)
-    stdout, stderr = p.communicate(example.source, timeout=2)
-    if p.returncode == 1 and stdout:
+
+def ruff_check(example: CodeExample, config: ExamplesConfig, remove_double_blank: bool = False) -> None:
+    try:
+        _invoke_ruff('check', example.source, config)
+    except FormatError as e:
+        message = e.args[0]
 
         def replace_offset(m: re.Match):
             line_number = int(m.group(1))
-            return f'{example.path}:{line_number + example.start_line}'
+            return f'  {example.path}:{line_number + example.start_line}'
 
-        output = re.sub(r'^-:(\d+)', replace_offset, stdout, flags=re.M)
-        raise FormatError(f'ruff failed:\n{indent(output, "  ")}')
+        message = re.sub(r'^  -:(\d+)', replace_offset, message, flags=re.M)
+        raise FormatError(message) from None
+
+    try:
+        _invoke_ruff(
+            'format',
+            example.source,
+            config,
+            extra_ruff_args=('--diff',),
+            remove_double_blank=remove_double_blank,
+        )
+    except FormatError as e:
+        # strip leading newlines
+        message = e.args[0]
+        # fixup start of the message to add before / after hints
+        message = re.sub(r'(ruff failed:\n)(  @@[^\n]+\n)(   #\n){0,3}', r'\1  --- before\n  +++ after\n\2', message)
+
+        def adjust_offset(m: re.match) -> str:
+            (removed, added) = (m.group(1), m.group(2))
+            removed = ','.join(str(int(x) + example.start_line) for x in removed.split(','))
+            added = ','.join(str(int(x) + example.start_line) for x in added.split(','))
+            return f'@@ -{removed} +{added} @@'
+
+        message = re.sub(r'@@ -(\d+(?:,\d+)?) \+(\d+(?:,\d+)?) @@', adjust_offset, message)
+        raise FormatError(message) from None
+
+
+def _invoke_ruff(
+    subcommand: Literal['check', 'format'],
+    source: str,
+    config: ExamplesConfig,
+    *,
+    remove_double_blank: bool = False,
+    extra_ruff_args: tuple[str, ...] = (),
+) -> str:
+    args = 'ruff', subcommand, *config.ruff_config(), '-', *extra_ruff_args
+
+    if subcommand == 'format':
+        # hack to avoid ruff complaining about our print output format
+        source = re.sub(r'^( *#)> ', r'\1 > ', source, flags=re.M)
+
+    p = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, universal_newlines=True)
+    stdout, stderr = p.communicate(source, timeout=2)
+
+    if subcommand == 'format':
+        # then revert it back
+        stdout = re.sub(r'^( *#) > ', r'\1> ', stdout, flags=re.M)
+        if remove_double_blank:
+            stdout = re.sub(r'\n{3}', '\n\n', stdout)
+
+        # remove trailing newline
+        stdout = stdout.rstrip('\n')
+
+    if p.returncode == 1 and stdout:
+        raise FormatError(f'ruff failed:\n{indent(stdout, "  ")}')
     elif p.returncode != 0:
         raise RuntimeError(f'Error running ruff, return code {p.returncode}:\n{stderr or stdout}')
     else:
         return stdout
 
 
-def black_format(source: str, config: ExamplesConfig, *, remove_double_blank: bool = False) -> str:
-    # hack to avoid black complaining about our print output format
-    before_black = re.sub(r'^( *#)> ', r'\1 > ', source, flags=re.M)
-    after_black = black_format_str(before_black, mode=config.black_mode())
-    # then revert it back
-    after_black = re.sub(r'^( *#) > ', r'\1> ', after_black, flags=re.M)
-    if remove_double_blank:
-        after_black = re.sub(r'\n{3}', '\n\n', after_black)
-    return after_black
-
-
-def black_check(example: CodeExample, config: ExamplesConfig) -> None:
-    after_black = black_format(example.source, config, remove_double_blank=example.in_py_file())
-    if example.source != after_black:
-        diff = code_diff(example, after_black)
-        raise FormatError(f'black failed:\n{indent(diff, "  ")}')
-
-
 def code_diff(example: CodeExample, after: str) -> str:
-    diff = black_diff(example.source, after, 'before', 'after')
+    before = example.source.splitlines(keepends=True)
+    after = after.splitlines(keepends=True)
+
+    diff = ''.join(difflib.unified_diff(before, after, 'before', 'after'))
 
     def replace_at_line(match: re.Match) -> str:
         offset = re.sub(r'\d+', lambda m: str(int(m.group(0)) + example.start_line), match.group(2))
