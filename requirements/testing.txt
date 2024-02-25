@@ -26,7 +26,7 @@ pytest-pretty==1.1.1
     # via -r requirements/testing.in
 rich==13.3.2
     # via pytest-pretty
-ruff==0.0.258
+ruff==0.2.2
     # via -r requirements/testing.in
 tomli==2.0.1
     # via pytest
