@@ -202,7 +202,7 @@ class InsertPrintStatements:
 
 comment_prefix = '#> '
 comment_prefix_re = re.compile(f'^ *{re.escape(comment_prefix)}', re.MULTILINE)
-triple_quotes_prefix_re = re.compile('^ *(?:"{3}|\'{3})', re.MULTILINE)
+triple_quotes_prefix_re = re.compile("^ *(?:\"{3}|'{3})", re.MULTILINE)
 
 
 def find_print_line(lines: list[str], line_no: int) -> int:

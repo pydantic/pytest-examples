@@ -64,12 +64,18 @@ xfail_strict = true
 
 [tool.ruff]
 line-length = 120
-exclude = ['cases_update']
-extend-select = ['Q', 'RUF100', 'C90', 'UP', 'I']
-flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
-mccabe = { max-complexity = 14 }
-isort = { known-first-party = ['pytest_examples'] }
 target-version = 'py37'
+exclude = ['cases_update']
+lint.extend-ignore = [
+    'E721',  # using type() instead of isinstance() - we use this in tests
+]
+lint.extend-select = ['Q', 'RUF100', 'C90', 'UP', 'I']
+lint.flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
+lint.mccabe = { max-complexity = 14 }
+lint.isort = { known-first-party = ['pytest_examples'] }
+
+[tool.ruff.format]
+quote-style = 'single'
 
 [tool.coverage.run]
 source = ['pytest_examples']
