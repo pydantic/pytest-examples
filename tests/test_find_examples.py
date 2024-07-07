@@ -264,6 +264,11 @@ assert a + b == 3
 def test_find_index_python(tmp_path):
     # language=Python
     code = '''
+def foo():
+    """Single line docstring"""
+    pass
+
+
 def func_a():
     """
     prefix.
