@@ -7,7 +7,7 @@ import pytest
 from .eval_example import EvalExample
 from .find_examples import CodeExample, find_examples
 
-__version__ = '0.0.12'
+__version__ = '0.0.13'
 __all__ = 'find_examples', 'CodeExample', 'EvalExample'
 
 
