@@ -49,6 +49,7 @@ def run_code(
         module.__dict__.update(module_globals)
     try:
         with insert_print:
+            sys.modules[spec.name] = module
             spec.loader.exec_module(module)
     except KeyboardInterrupt:
         print('KeyboardInterrupt in example')
