@@ -50,7 +50,7 @@ def ruff_check(
     args = 'ruff', 'check', '-', *config.ruff_config(), *extra_ruff_args
 
     p = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, universal_newlines=True)
-    stdout, stderr = p.communicate(example.source, timeout=2)
+    stdout, stderr = p.communicate(example.source, timeout=10)
     if p.returncode == 1 and stdout:
 
         def replace_offset(m: re.Match):
