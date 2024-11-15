@@ -9,16 +9,12 @@ if TYPE_CHECKING:
 
 
 def create_example_traceback(exc: Exception, module_path: str, example: CodeExample) -> TracebackType | None:
-    """
-    Create a new traceback with the filename and line numbers altered to match `example`.
+    """Create a new traceback with the filename and line numbers altered to match `example`.
 
     This involves lots of horrible hacking, but (somewhat miraculously) seems to work.
 
     Frames outside the example are not included in the new traceback.
     """
-    if sys.version_info < (3, 8):
-        # f_code.co_posonlyargcount was added in 3.8
-        return None
     frames = []
     tb = exc.__traceback__
     while tb is not None:
@@ -35,9 +31,10 @@ def create_example_traceback(exc: Exception, module_path: str, example: CodeExam
 
 
 def create_custom_frame(frame: FrameType, example: CodeExample) -> FrameType:
-    """
+    """Create a new frame that mostly matches `frame` but with filename and line number faked.
+
     Create a new frame that mostly matches `frame` but with a code object that has
-    a filename from `example` and adjusted an adjusted first line number
+    a filename from `example` and adjusted first line number
     so that pytest shows the correct code context in the traceback.
 
     Taken mostly from https://naleraphael.github.io/blog/posts/devlog_create_a_builtin_frame_object/

@@ -31,4 +31,4 @@ testcov:
 	@uv run coverage html
 
 .PHONY: all
-all: lint testcov
+all: format lint testcov

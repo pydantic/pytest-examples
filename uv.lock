@@ -317,7 +317,7 @@ wheels = [
 
 [[package]]
 name = "pytest-examples"
-version = "0.0.13"
+version = "0.0.14"
 source = { editable = "." }
 dependencies = [
     { name = "black" },
