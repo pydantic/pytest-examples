@@ -70,7 +70,7 @@ class EvalExample:
 
     @property
     def update_examples(self) -> bool:
-        return self._pytest_config.getoption('update_examples')
+        return bool(self._pytest_config.getoption('update_examples'))
 
     def run(
         self,

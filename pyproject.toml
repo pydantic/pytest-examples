@@ -55,6 +55,7 @@ dev = [
 ]
 lint = [
     'pre-commit>=3.5.0',
+    'pyright>=1.1.389',
     'ruff>=0.7.4',
 ]
 
@@ -86,13 +87,13 @@ flake8-quotes = { inline-quotes = 'single', multiline-quotes = 'double' }
 isort = { combine-as-imports = true, known-first-party = ['pytest_examples'] }
 mccabe = { max-complexity = 15 }
 ignore = [
+    'D100', # ignore missing docstring in module
     'D101', # ignore missing docstring in public class
     'D102', # ignore missing docstring in public method
     'D103', # ignore missing docstring in public function
-    'D107', # ignore missing docstring in __init__ methods
-    'D100', # ignore missing docstring in module
     'D104', # ignore missing docstring in public package
     'D105', # ignore missing docstring in magic methods
+    'D107', # ignore missing docstring in __init__ methods
 ]
 
 [tool.ruff.lint.pydocstyle]
@@ -114,3 +115,10 @@ exclude_lines = [
     'if TYPE_CHECKING:',
     '@overload',
 ]
+
+[tool.pyright]
+#typeCheckingMode = 'strict'
+reportUnnecessaryTypeIgnoreComment = true
+reportMissingTypeStubs = false
+include = ['pytest_examples']
+venvPath = '.venv'

@@ -55,7 +55,7 @@ def create_custom_frame(frame: FrameType, example: CodeExample) -> FrameType:
     )
     ctypes.pythonapi.PyFrame_New.restype = ctypes.py_object  # PyFrameObject*
 
-    ctypes.pythonapi.PyThreadState_Get.argtypes = None
+    ctypes.pythonapi.PyThreadState_Get.argtypes = None  # type: ignore
     ctypes.pythonapi.PyThreadState_Get.restype = P_MEM_TYPE
 
     f_code = frame.f_code
