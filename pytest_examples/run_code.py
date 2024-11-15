@@ -38,7 +38,7 @@ def run_code(
     enable_print_mock: bool,
     print_callback: Callable[[str], str] | None,
     module_globals: dict[str, Any] | None,
-    check_call_main: bool,
+    call: str | None,
 ) -> tuple[InsertPrintStatements, dict[str, Any]]:
     __tracebackhide__ = True
 
@@ -55,13 +55,13 @@ def run_code(
         with insert_print:
             sys.modules[spec.name] = module
             spec.loader.exec_module(module)
-            if check_call_main:
-                main = getattr(module, 'main', None)
-                if main is not None:
-                    if inspect.iscoroutinefunction(main):
-                        asyncio.run(main())
+            if call:
+                to_call = getattr(module, call, None)
+                if to_call is not None:
+                    if inspect.iscoroutinefunction(to_call):
+                        asyncio.run(to_call())
                     else:
-                        main()
+                        to_call()
     except KeyboardInterrupt:
         print('KeyboardInterrupt in example')
     except Exception as exc:

@@ -379,7 +379,7 @@ def main():
     eval_example.run_print_check(example)
 
     with pytest.raises(ZeroDivisionError):
-        eval_example.run_print_check(example, check_call_main=True)
+        eval_example.run_print_check(example, call='main')
 
 
 def test_run_main_print(tmp_path, eval_example):
@@ -397,7 +397,7 @@ def main():
     example = CodeExample.create(python_code, path=md_file)
     eval_example.set_config(line_length=30)
 
-    module_dict = eval_example.run_print_check(example, check_call_main=True)
+    module_dict = eval_example.run_print_check(example, call='main')
     assert module_dict['main_called']
 
 
@@ -416,5 +416,5 @@ async def main():
     example = CodeExample.create(python_code, path=md_file)
     eval_example.set_config(line_length=30)
 
-    module_dict = eval_example.run_print_check(example, check_call_main=True)
+    module_dict = eval_example.run_print_check(example, call='main')
     assert module_dict['main_called']

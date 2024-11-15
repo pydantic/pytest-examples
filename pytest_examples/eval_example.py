@@ -78,7 +78,7 @@ class EvalExample:
         *,
         module_globals: dict[str, Any] | None = None,
         rewrite_assertions: bool = True,
-        check_call_main: bool = False,
+        call: str | None = None,
     ) -> dict[str, Any]:
         """Run the example, print is not mocked and print statements are not checked.
 
@@ -86,11 +86,11 @@ class EvalExample:
             example: The example to run.
             module_globals: The globals to use when running the example.
             rewrite_assertions: If True, rewrite assertions in the example using pytest's assertion rewriting.
-            check_call_main: If True, check if there's a `main` function or coroutine and call it if so.
+            call: If not None, method to check for and call if it exists.
         """
         __tracebackhide__ = True
         example.test_id = self._test_id
-        _, module_dict = self._run(example, None, module_globals, rewrite_assertions, check_call_main)
+        _, module_dict = self._run(example, None, module_globals, rewrite_assertions, call)
         return module_dict
 
     def run_print_check(
@@ -99,7 +99,7 @@ class EvalExample:
         *,
         module_globals: dict[str, Any] | None = None,
         rewrite_assertions: bool = True,
-        check_call_main: bool = False,
+        call: str | None = None,
     ) -> dict[str, Any]:
         """Run the example and check print statements.
 
@@ -107,11 +107,11 @@ class EvalExample:
             example: The example to run.
             module_globals: The globals to use when running the example.
             rewrite_assertions: If True, rewrite assertions in the example using pytest's assertion rewriting.
-            check_call_main: If True, check if there's a `main` function or coroutine and call it if so.
+            call: If not None, method to check for and call if it exists.
         """
         __tracebackhide__ = True
         example.test_id = self._test_id
-        insert_print, module_dict = self._run(example, 'check', module_globals, rewrite_assertions, check_call_main)
+        insert_print, module_dict = self._run(example, 'check', module_globals, rewrite_assertions, call)
         insert_print.check_print_statements(example)
         return module_dict
 
@@ -121,7 +121,7 @@ class EvalExample:
         *,
         module_globals: dict[str, Any] | None = None,
         rewrite_assertions: bool = True,
-        check_call_main: bool = False,
+        call: str | None = None,
     ) -> dict[str, Any]:
         """Run the example and update print statements, requires `--update-examples`.
 
@@ -129,11 +129,11 @@ class EvalExample:
             example: The example to run.
             module_globals: The globals to use when running the example.
             rewrite_assertions: If True, rewrite assertions in the example using pytest's assertion rewriting.
-            check_call_main: If True, check if there's a `main` function or coroutine and call it if so.
+            call: If not None, method to check for and call if it exists.
         """
         __tracebackhide__ = True
         self._check_update(example)
-        insert_print, module_dict = self._run(example, 'update', module_globals, rewrite_assertions, check_call_main)
+        insert_print, module_dict = self._run(example, 'update', module_globals, rewrite_assertions, call)
 
         new_code = insert_print.updated_print_statements(example)
         if new_code:
@@ -147,7 +147,7 @@ class EvalExample:
         insert_print_statements: Literal['check', 'update', None],
         module_globals: dict[str, Any] | None,
         rewrite_assertions: bool,
-        check_call_main: bool,
+        call: str | None,
     ) -> tuple[InsertPrintStatements, dict[str, Any]]:
         __tracebackhide__ = True
 
@@ -173,7 +173,7 @@ class EvalExample:
             enable_print_mock=enable_print_mock,
             print_callback=self.print_callback,
             module_globals=module_globals,
-            check_call_main=check_call_main,
+            call=call,
         )
 
     def lint(self, example: CodeExample) -> None:
