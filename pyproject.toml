@@ -1,124 +1,124 @@
 [build-system]
-requires = ['hatchling']
-build-backend = 'hatchling.build'
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.sdist]
 # limit which files are included in the sdist (.tar.gz) asset,
 # see https://github.com/pydantic/pydantic/pull/4542
-include = ['/README.md', '/Makefile', '/pytest_examples', '/tests']
+include = ["/README.md", "/Makefile", "/pytest_examples", "/tests"]
 
 [project]
-name = 'pytest-examples'
-version = '0.0.14'
-description = 'Pytest plugin for testing examples in docstrings and markdown files.'
+name = "pytest-examples"
+version = "0.0.14"
+description = "Pytest plugin for testing examples in docstrings and markdown files."
 authors = [
-    {name = 'Samuel Colvin', email = 's@muelcolvin.com'},
+    {name = "Samuel Colvin", email = "s@muelcolvin.com"},
 ]
-license = 'MIT'
-readme = 'README.md'
+license = "MIT"
+readme = "README.md"
 classifiers = [
-    'Programming Language :: Python',
-    'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3 :: Only',
-    'Programming Language :: Python :: 3.8',
-    'Programming Language :: Python :: 3.9',
-    'Programming Language :: Python :: 3.10',
-    'Programming Language :: Python :: 3.11',
-    'Programming Language :: Python :: 3.12',
-    'Programming Language :: Python :: 3.13',
-    'Intended Audience :: Developers',
-    'License :: OSI Approved :: MIT License',
-    'Operating System :: Unix',
-    'Operating System :: POSIX :: Linux',
-    'Environment :: Console',
-    'Environment :: MacOS X',
-    'Framework :: Pytest',
-    'Topic :: Software Development :: Libraries :: Python Modules',
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Unix",
+    "Operating System :: POSIX :: Linux",
+    "Environment :: Console",
+    "Environment :: MacOS X",
+    "Framework :: Pytest",
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-requires-python = '>=3.8'
+requires-python = ">=3.8"
 dependencies = [
-    'pytest>=7',
-    'black>=23',
-    'ruff>=0.5.0',
+    "pytest>=7",
+    "black>=23",
+    "ruff>=0.5.0",
 ]
 
 [project.entry-points.pytest11]
-examples = 'pytest_examples'
+examples = "pytest_examples"
 
 [project.urls]
-repository = 'https://github.com/pydantic/pytest-examples'
+repository = "https://github.com/pydantic/pytest-examples"
 
 [dependency-groups]
 dev = [
-    'coverage[toml]>=7.6.1',
-    'pytest-pretty>=1.2.0',
+    "coverage[toml]>=7.6.1",
+    "pytest-pretty>=1.2.0",
 ]
 lint = [
-    'pre-commit>=3.5.0',
-    'pyright>=1.1.389',
-    'ruff>=0.7.4',
+    "pre-commit>=3.5.0",
+    "pyright>=1.1.389",
+    "ruff>=0.7.4",
 ]
 
 [tool.pytest.ini_options]
-testpaths = ['tests', 'example']
-filterwarnings = 'error'
+testpaths = ["tests", "example"]
+filterwarnings = "error"
 xfail_strict = true
 
 [tool.ruff]
 line-length = 120
-target-version = 'py39'
+target-version = "py39"
 include = [
-    'pytest_examples/**/*.py',
-    'tests/**/*.py',
-    'examples/**/*.py',
+    "pytest_examples/**/*.py",
+    "tests/**/*.py",
+    "examples/**/*.py",
 ]
-exclude = ['tests/cases_update/*.py']
+exclude = ["tests/cases_update/*.py"]
 
 [tool.ruff.lint]
 extend-select = [
-    'Q',
-    'RUF100',
-    'C90',
-    'UP',
-    'I',
-    'D',
+    "Q",
+    "RUF100",
+    "C90",
+    "UP",
+    "I",
+    "D",
 ]
-flake8-quotes = { inline-quotes = 'single', multiline-quotes = 'double' }
-isort = { combine-as-imports = true, known-first-party = ['pytest_examples'] }
+flake8-quotes = { inline-quotes = "single", multiline-quotes = "double" }
+isort = { combine-as-imports = true, known-first-party = ["pytest_examples"] }
 mccabe = { max-complexity = 15 }
 ignore = [
-    'D100', # ignore missing docstring in module
-    'D101', # ignore missing docstring in public class
-    'D102', # ignore missing docstring in public method
-    'D103', # ignore missing docstring in public function
-    'D104', # ignore missing docstring in public package
-    'D105', # ignore missing docstring in magic methods
-    'D107', # ignore missing docstring in __init__ methods
+    "D100", # ignore missing docstring in module
+    "D101", # ignore missing docstring in public class
+    "D102", # ignore missing docstring in public method
+    "D103", # ignore missing docstring in public function
+    "D104", # ignore missing docstring in public package
+    "D105", # ignore missing docstring in magic methods
+    "D107", # ignore missing docstring in __init__ methods
 ]
 
 [tool.ruff.lint.pydocstyle]
-convention = 'google'
+convention = "google"
 
 [tool.ruff.format]
 docstring-code-format = true
-quote-style = 'single'
+quote-style = "single"
 
 [tool.coverage.run]
-source = ['pytest_examples']
+source = ["pytest_examples"]
 branch = true
 
 [tool.coverage.report]
 precision = 2
 exclude_lines = [
-    'pragma: no cover',
-    'raise NotImplementedError',
-    'if TYPE_CHECKING:',
-    '@overload',
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "@overload",
 ]
 
 [tool.pyright]
-#typeCheckingMode = 'strict'
+#typeCheckingMode = "strict"
 reportUnnecessaryTypeIgnoreComment = true
 reportMissingTypeStubs = false
-include = ['pytest_examples']
-venvPath = '.venv'
+include = ["pytest_examples"]
+venvPath = ".venv"
