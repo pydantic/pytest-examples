@@ -10,9 +10,7 @@ if TYPE_CHECKING:
 
 
 def _modify_files(examples: list[CodeExample]) -> str:
-    """
-    Internal use only, update examples in place.
-    """
+    """Internal use only, update examples in place."""
     # The same example shouldn't appear more than once
     unique_examples: set[str] = set()
     for ex in examples:

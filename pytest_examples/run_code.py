@@ -1,6 +1,7 @@
 from __future__ import annotations as _annotations
 
 import ast
+import asyncio
 import dataclasses
 import importlib.util
 import inspect
@@ -29,6 +30,7 @@ parent_frame_id = 4 if sys.version_info >= (3, 8) else 3
 
 
 def run_code(
+    *,
     example: CodeExample,
     python_file: Path,
     loader: Loader | None,
@@ -36,6 +38,7 @@ def run_code(
     enable_print_mock: bool,
     print_callback: Callable[[str], str] | None,
     module_globals: dict[str, Any] | None,
+    call: str | None,
 ) -> tuple[InsertPrintStatements, dict[str, Any]]:
     __tracebackhide__ = True
 
@@ -47,9 +50,18 @@ def run_code(
 
     if module_globals:
         module.__dict__.update(module_globals)
+
     try:
         with insert_print:
+            sys.modules[spec.name] = module
             spec.loader.exec_module(module)
+            if call:
+                to_call = getattr(module, call, None)
+                if to_call is not None:
+                    if inspect.iscoroutinefunction(to_call):
+                        asyncio.run(to_call())
+                    else:
+                        to_call()
     except KeyboardInterrupt:
         print('KeyboardInterrupt in example')
     except Exception as exc:
@@ -206,11 +218,8 @@ triple_quotes_prefix_re = re.compile('^ *(?:"{3}|\'{3})', re.MULTILINE)
 
 
 def find_print_line(lines: list[str], line_no: int) -> int:
-    """
-    For 3.7 we have to reverse through lines to find the print statement lint
-    """
-    if sys.version_info >= (3, 8):
-        return line_no
+    """For 3.7 we have to reverse through lines to find the print statement lint."""
+    return line_no
 
     for back in range(100):
         new_line_no = line_no - back
@@ -221,9 +230,7 @@ def find_print_line(lines: list[str], line_no: int) -> int:
 
 
 def remove_old_print(lines: list[str], line_index: int) -> None:
-    """
-    Remove the old print statement.
-    """
+    """Remove the old print statement."""
     try:
         next_line = lines[line_index + 1]
     except IndexError:
@@ -246,23 +253,13 @@ def remove_old_print(lines: list[str], line_index: int) -> None:
 
 
 def find_print_location(example: CodeExample, line_no: int) -> tuple[int, int]:
-    """
-    Find the line and column of the print statement.
+    """Find the line and column of the print statement.
 
     :param example: the `CodeExample`
     :param line_no: The line number on which the print statement starts (or approx on 3.7)
     :return: tuple if `(line, column)` of the print statement
     """
     # For 3.7 we have to reverse through lines to find the print statement lint
-    if sys.version_info < (3, 8):
-        # find the last print statement before the line
-        lines = example.source.splitlines()
-        for back in range(100):
-            new_line_no = line_no - back
-            m = re.match(r' *print\(', lines[new_line_no - 1])
-            if m:
-                line_no = new_line_no
-                break
 
     m = ast.parse(example.source, filename=example.path.name)
     return find_print(m, line_no) or (line_no, 0)

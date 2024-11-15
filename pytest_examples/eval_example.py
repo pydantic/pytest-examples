@@ -20,9 +20,7 @@ __all__ = ('EvalExample',)
 
 
 class EvalExample:
-    """
-    Class to run and lint examples.
-    """
+    """Class to run and lint examples."""
 
     def __init__(self, *, tmp_path: Path, pytest_request: pytest.FixtureRequest):
         self.tmp_path = tmp_path
@@ -45,18 +43,18 @@ class EvalExample:
         ruff_select: list[str] | None = None,
         ruff_ignore: list[str] | None = None,
     ):
-        """
-        Set the config for lints
+        """Set the config for lints.
 
-        :param line_length: The line length to use when wrapping print statements, defaults to 88.
-        :param quotes: The quote to use, defaults to "either".
-        :param magic_trailing_comma: If True, add a trailing comma to magic methods, defaults to True.
-        :param target_version: The target version to use when upgrading code, defaults to "py37".
-        :param upgrade: If True, upgrade the code to the target version, defaults to False.
-        :param isort: If True, run ruff's isort extension on the code, defaults to False.
-        :param ruff_line_length: In general, we disable line-length checks in ruff, to let black take care of them.
-        :param ruff_select: Ruff rules to select
-        :param ruff_ignore: Ruff rules to ignore
+        Args:
+            line_length: The line length to use when wrapping print statements, defaults to 88.
+            quotes: The quote to use, defaults to "either".
+            magic_trailing_comma: If True, add a trailing comma to magic methods, defaults to True.
+            target_version: The target version to use when upgrading code, defaults to "py37".
+            upgrade: If True, upgrade the code to the target version, defaults to False.
+            isort: If True, run ruff's isort extension on the code, defaults to False.
+            ruff_line_length: In general, we disable line-length checks in ruff, to let black take care of them.
+            ruff_select: Ruff rules to select
+            ruff_ignore: Ruff rules to ignore
         """
         self.config = ExamplesConfig(
             line_length=line_length,
@@ -80,17 +78,19 @@ class EvalExample:
         *,
         module_globals: dict[str, Any] | None = None,
         rewrite_assertions: bool = True,
+        call: str | None = None,
     ) -> dict[str, Any]:
-        """
-        Run the example, print is not mocked and print statements are not checked.
+        """Run the example, print is not mocked and print statements are not checked.
 
-        :param example: The example to run.
-        :param module_globals: The globals to use when running the example.
-        :param rewrite_assertions: If True, rewrite assertions in the example using pytest's assertion rewriting.
+        Args:
+            example: The example to run.
+            module_globals: The globals to use when running the example.
+            rewrite_assertions: If True, rewrite assertions in the example using pytest's assertion rewriting.
+            call: If not None, method to check for and call if it exists.
         """
         __tracebackhide__ = True
         example.test_id = self._test_id
-        _, module_dict = self._run(example, None, module_globals, rewrite_assertions)
+        _, module_dict = self._run(example, None, module_globals, rewrite_assertions, call)
         return module_dict
 
     def run_print_check(
@@ -99,17 +99,19 @@ class EvalExample:
         *,
         module_globals: dict[str, Any] | None = None,
         rewrite_assertions: bool = True,
+        call: str | None = None,
     ) -> dict[str, Any]:
-        """
-        Run the example and check print statements.
+        """Run the example and check print statements.
 
-        :param example: The example to run.
-        :param module_globals: The globals to use when running the example.
-        :param rewrite_assertions: If True, rewrite assertions in the example using pytest's assertion rewriting.
+        Args:
+            example: The example to run.
+            module_globals: The globals to use when running the example.
+            rewrite_assertions: If True, rewrite assertions in the example using pytest's assertion rewriting.
+            call: If not None, method to check for and call if it exists.
         """
         __tracebackhide__ = True
         example.test_id = self._test_id
-        insert_print, module_dict = self._run(example, 'check', module_globals, rewrite_assertions)
+        insert_print, module_dict = self._run(example, 'check', module_globals, rewrite_assertions, call)
         insert_print.check_print_statements(example)
         return module_dict
 
@@ -119,17 +121,19 @@ class EvalExample:
         *,
         module_globals: dict[str, Any] | None = None,
         rewrite_assertions: bool = True,
+        call: str | None = None,
     ) -> dict[str, Any]:
-        """
-        Run the example and update print statements, requires `--update-examples`.
+        """Run the example and update print statements, requires `--update-examples`.
 
-        :param example: The example to run.
-        :param module_globals: The globals to use when running the example.
-        :param rewrite_assertions: If True, rewrite assertions in the example using pytest's assertion rewriting.
+        Args:
+            example: The example to run.
+            module_globals: The globals to use when running the example.
+            rewrite_assertions: If True, rewrite assertions in the example using pytest's assertion rewriting.
+            call: If not None, method to check for and call if it exists.
         """
         __tracebackhide__ = True
         self._check_update(example)
-        insert_print, module_dict = self._run(example, 'update', module_globals, rewrite_assertions)
+        insert_print, module_dict = self._run(example, 'update', module_globals, rewrite_assertions, call)
 
         new_code = insert_print.updated_print_statements(example)
         if new_code:
@@ -143,6 +147,7 @@ class EvalExample:
         insert_print_statements: Literal['check', 'update', None],
         module_globals: dict[str, Any] | None,
         rewrite_assertions: bool,
+        call: str | None,
     ) -> tuple[InsertPrintStatements, dict[str, Any]]:
         __tracebackhide__ = True
 
@@ -161,23 +166,30 @@ class EvalExample:
 
         python_file = self._write_file(example)
         return run_code(
-            example, python_file, loader, self.config, enable_print_mock, self.print_callback, module_globals
+            example=example,
+            python_file=python_file,
+            loader=loader,
+            config=self.config,
+            enable_print_mock=enable_print_mock,
+            print_callback=self.print_callback,
+            module_globals=module_globals,
+            call=call,
         )
 
     def lint(self, example: CodeExample) -> None:
-        """
-        Lint the example with black and ruff.
+        """Lint the example with black and ruff.
 
-        :param example: The example to lint.
+        Args:
+            example: The example to lint.
         """
         self.lint_black(example)
         self.lint_ruff(example)
 
     def lint_black(self, example: CodeExample) -> None:
-        """
-        Lint the example using black.
+        """Lint the example using black.
 
-        :param example: The example to lint.
+        Args:
+            example: The example to lint.
         """
         example.test_id = self._test_id
         try:
@@ -189,10 +201,10 @@ class EvalExample:
         self,
         example: CodeExample,
     ) -> None:
-        """
-        Lint the example using ruff.
+        """Lint the example using ruff.
 
-        :param example: The example to lint.
+        Args:
+            example: The example to lint.
         """
         example.test_id = self._test_id
         try:
@@ -201,19 +213,19 @@ class EvalExample:
             raise PytestFailed(str(exc), pytrace=False) from None
 
     def format(self, example: CodeExample) -> None:
-        """
-        Format the example with black and ruff, requires `--update-examples`.
+        """Format the example with black and ruff, requires `--update-examples`.
 
-        :param example: The example to format.
+        Args:
+            example: The example to format.
         """
         self.format_ruff(example)
         self.format_black(example)
 
     def format_black(self, example: CodeExample) -> None:
-        """
-        Format the example using black, requires `--update-examples`.
+        """Format the example using black, requires `--update-examples`.
 
-        :param example: The example to lint.
+        Args:
+            example: The example to lint.
         """
         self._check_update(example)
 
@@ -226,10 +238,10 @@ class EvalExample:
         self,
         example: CodeExample,
     ) -> None:
-        """
-        Format the example using ruff, requires `--update-examples`.
+        """Format the example using ruff, requires `--update-examples`.
 
-        :param example: The example to lint.
+        Args:
+            example: The example to lint.
         """
         self._check_update(example)
 
@@ -248,9 +260,7 @@ class EvalExample:
         example.test_id = self._test_id
 
     def _mark_for_update(self, example: CodeExample) -> None:
-        """
-        Add the example to self.to_update IF it's not already there.
-        """
+        """Add the example to self.to_update IF it's not already there."""
         s = str(example)
         if not any(s == str(ex) for ex in self.to_update):
             self.to_update.append(example)

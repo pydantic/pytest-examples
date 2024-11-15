@@ -13,7 +13,8 @@ print("this is the first example")
 ```
 
 ```py
-print(["first things", "second things", "third things"])
+async def main():
+    print(["first things", "second things", "third things"])
 ```
         """,
     )
@@ -45,7 +46,7 @@ import pytest
 def test_find_examples(example: CodeExample, eval_example: EvalExample):
     if eval_example.update_examples:
         eval_example.lint(example)
-        eval_example.run_print_update(example)
+        eval_example.run_print_update(example, call='main')
     else:
         eval_example.lint(example)
         # insert_print_statements='check' would fail here
@@ -70,8 +71,9 @@ print("this is the first example")
 ```
 
 ```py
-print(["first things", "second things", "third things"])
-#> ['first things', 'second things', 'third things']
+async def main():
+    print(["first things", "second things", "third things"])
+    #> ['first things', 'second things', 'third things']
 ```"""
     )
     assert (

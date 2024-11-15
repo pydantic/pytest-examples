@@ -2,21 +2,14 @@
 requires = ['hatchling']
 build-backend = 'hatchling.build'
 
-[tool.hatch.version]
-path = 'pytest_examples/__init__.py'
-
 [tool.hatch.build.targets.sdist]
 # limit which files are included in the sdist (.tar.gz) asset,
 # see https://github.com/pydantic/pydantic/pull/4542
-include = [
-    '/README.md',
-    '/Makefile',
-    '/pytest_examples',
-    '/requirements',
-]
+include = ['/README.md', '/Makefile', '/pytest_examples', '/tests']
 
 [project]
 name = 'pytest-examples'
+version = '0.0.14'
 description = 'Pytest plugin for testing examples in docstrings and markdown files.'
 authors = [
     {name = 'Samuel Colvin', email = 's@muelcolvin.com'},
@@ -24,15 +17,15 @@ authors = [
 license = 'MIT'
 readme = 'README.md'
 classifiers = [
-    'Development Status :: 4 - Beta',
     'Programming Language :: Python',
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3 :: Only',
-    'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
     'Intended Audience :: Developers',
     'License :: OSI Approved :: MIT License',
     'Operating System :: Unix',
@@ -42,12 +35,11 @@ classifiers = [
     'Framework :: Pytest',
     'Topic :: Software Development :: Libraries :: Python Modules',
 ]
-requires-python = '>=3.7'
-dynamic = ['version']
+requires-python = '>=3.8'
 dependencies = [
     'pytest>=7',
     'black>=23',
-    'ruff>=0.0.258',
+    'ruff>=0.5.0',
 ]
 
 [project.entry-points.pytest11]
@@ -56,6 +48,16 @@ examples = 'pytest_examples'
 [project.urls]
 repository = 'https://github.com/pydantic/pytest-examples'
 
+[dependency-groups]
+dev = [
+    'coverage[toml]>=7.6.1',
+    'pytest-pretty>=1.2.0',
+]
+lint = [
+    'pre-commit>=3.5.0',
+    'ruff>=0.7.4',
+]
+
 [tool.pytest.ini_options]
 testpaths = ['tests', 'example']
 filterwarnings = 'error'
@@ -63,12 +65,42 @@ xfail_strict = true
 
 [tool.ruff]
 line-length = 120
-exclude = ['cases_update']
-extend-select = ['Q', 'RUF100', 'C90', 'UP', 'I']
-flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
-mccabe = { max-complexity = 14 }
-isort = { known-first-party = ['pytest_examples'] }
-target-version = 'py37'
+target-version = 'py39'
+include = [
+    'pytest_examples/**/*.py',
+    'tests/**/*.py',
+    'examples/**/*.py',
+]
+exclude = ['tests/cases_update/*.py']
+
+[tool.ruff.lint]
+extend-select = [
+    'Q',
+    'RUF100',
+    'C90',
+    'UP',
+    'I',
+    'D',
+]
+flake8-quotes = { inline-quotes = 'single', multiline-quotes = 'double' }
+isort = { combine-as-imports = true, known-first-party = ['pytest_examples'] }
+mccabe = { max-complexity = 15 }
+ignore = [
+    'D101', # ignore missing docstring in public class
+    'D102', # ignore missing docstring in public method
+    'D103', # ignore missing docstring in public function
+    'D107', # ignore missing docstring in __init__ methods
+    'D100', # ignore missing docstring in module
+    'D104', # ignore missing docstring in public package
+    'D105', # ignore missing docstring in magic methods
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = 'google'
+
+[tool.ruff.format]
+docstring-code-format = true
+quote-style = 'single'
 
 [tool.coverage.run]
 source = ['pytest_examples']
@@ -82,10 +114,3 @@ exclude_lines = [
     'if TYPE_CHECKING:',
     '@overload',
 ]
-
-[tool.black]
-exclude = '.*/cases_update/.*'
-color = true
-line-length = 120
-target-version = ['py310']
-skip-string-normalization = true
