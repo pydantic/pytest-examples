@@ -176,7 +176,7 @@ class InsertPrintStatements:
     def check_print_statements(self, example: CodeExample) -> None:
         with_prints = self._insert_print_statements(example)
         # we check against the raw `with_prints` and `with_prints` with trailing whitespace removed
-        if example.source != with_prints and example.source != re.sub(r'\s+\n', '\n', with_prints):
+        if example.source != with_prints and example.source != re.sub(r'[ \t]+\n', '\n', with_prints):
             diff = code_diff(example, with_prints)
             pytest.fail(f'Print output changed code:\n{indent(diff, "  ")}', pytrace=False)
 

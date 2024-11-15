@@ -92,4 +92,5 @@ def code_diff(example: CodeExample, after: str) -> str:
         offset = re.sub(r'\d+', lambda m: str(int(m.group(0)) + example.start_line), match.group(2))
         return f'{match.group(1)}{offset}{match.group(3)}'
 
+    # we could add `.replace(' ', '·')` to make white space easier to understand
     return re.sub(r'^(@@\s*)(.*)(\s*@@)$', replace_at_line, diff, flags=re.M)

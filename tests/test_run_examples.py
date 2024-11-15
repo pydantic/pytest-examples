@@ -314,6 +314,7 @@ def test_print_check_spaces(pytester: pytest.Pytester):
 
 ```py
 # note trailing space
+
 print('hello ')
 #> hello
 ```""",
