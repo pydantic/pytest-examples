@@ -303,3 +303,32 @@ def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
 
     result = pytester.runpytest('-p', 'no:pretty', '-v')
     result.assert_outcomes(passed=1)
+
+
+def test_print_check_spaces(pytester: pytest.Pytester):
+    pytester.makefile(
+        '.md',
+        # language=Markdown
+        my_file="""
+# My file
+
+```py
+# note trailing space
+print('hello ')
+#> hello
+```""",
+    )
+    # language=Python
+    pytester.makepyfile(
+        r"""
+from pytest_examples import find_examples, CodeExample, EvalExample
+import pytest
+
+@pytest.mark.parametrize('example', find_examples('.'), ids=str)
+def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
+    eval_example.run_print_check(example, rewrite_assertions=False)
+"""
+    )
+
+    result = pytester.runpytest('-p', 'no:pretty', '-v')
+    result.assert_outcomes(passed=1)

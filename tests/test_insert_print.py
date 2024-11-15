@@ -335,6 +335,20 @@ print(Foo())
 ''',
         id='hex_id',
     ),
+    pytest.param(
+        """\
+for i in range(3):
+    print(i)
+    #> 0
+    #> 1
+    #> 2
+""",
+        id='look',
+    ),
+    pytest.param(
+        """print('foobar ')\n#> foobar \n""",
+        id='trailing-spaces',
+    ),
 ]
 
 
