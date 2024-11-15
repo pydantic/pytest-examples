@@ -27,6 +27,8 @@ class ExamplesConfig:
     ruff_line_length: int | None = None
     ruff_select: list[str] | None = None
     ruff_ignore: list[str] | None = None
+    white_space_dot: bool = False
+    """If True, replace spaces with `·` in example diffs."""
 
     def black_mode(self):
         return BlackMode(

@@ -81,16 +81,22 @@ def black_format(source: str, config: ExamplesConfig, *, remove_double_blank: bo
 def black_check(example: CodeExample, config: ExamplesConfig) -> None:
     after_black = black_format(example.source, config, remove_double_blank=example.in_py_file())
     if example.source != after_black:
-        diff = code_diff(example, after_black)
+        diff = code_diff(example, after_black, config.white_space_dot)
         raise FormatError(f'black failed:\n{indent(diff, "  ")}')
 
 
-def code_diff(example: CodeExample, after: str) -> str:
-    diff = black_diff(example.source, after, 'before', 'after')
+def code_diff(example: CodeExample, after: str, white_space_dot: bool) -> str:
+    diff = black_diff(sub_space(example.source, white_space_dot), sub_space(after, white_space_dot), 'before', 'after')
 
     def replace_at_line(match: re.Match) -> str:
         offset = re.sub(r'\d+', lambda m: str(int(m.group(0)) + example.start_line), match.group(2))
         return f'{match.group(1)}{offset}{match.group(3)}'
 
-    # we could add `.replace(' ', '·')` to make white space easier to understand
     return re.sub(r'^(@@\s*)(.*)(\s*@@)$', replace_at_line, diff, flags=re.M)
+
+
+def sub_space(text: str, white_space_dot: bool) -> str:
+    if white_space_dot:
+        return text.replace(' ', '·')
+    else:
+        return text
