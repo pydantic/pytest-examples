@@ -176,7 +176,7 @@ class InsertPrintStatements:
     def check_print_statements(self, example: CodeExample) -> None:
         new_code = self.updated_print_statements(example)
         if new_code is not None:
-            diff = code_diff(example, new_code, self.config.white_space_dot)
+            diff = code_diff(example, new_code, self.config)
             pytest.fail(f'Print output changed code:\n{indent(diff, "  ")}', pytrace=False)
 
     def updated_print_statements(self, example: CodeExample) -> str | None:
