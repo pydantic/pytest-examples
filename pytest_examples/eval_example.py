@@ -20,9 +20,7 @@ __all__ = ('EvalExample',)
 
 
 class EvalExample:
-    """
-    Class to run and lint examples.
-    """
+    """Class to run and lint examples."""
 
     def __init__(self, *, tmp_path: Path, pytest_request: pytest.FixtureRequest):
         self.tmp_path = tmp_path
@@ -45,8 +43,7 @@ class EvalExample:
         ruff_select: list[str] | None = None,
         ruff_ignore: list[str] | None = None,
     ):
-        """
-        Set the config for lints
+        """Set the config for lints.
 
         :param line_length: The line length to use when wrapping print statements, defaults to 88.
         :param quotes: The quote to use, defaults to "either".
@@ -81,8 +78,7 @@ class EvalExample:
         module_globals: dict[str, Any] | None = None,
         rewrite_assertions: bool = True,
     ) -> dict[str, Any]:
-        """
-        Run the example, print is not mocked and print statements are not checked.
+        """Run the example, print is not mocked and print statements are not checked.
 
         :param example: The example to run.
         :param module_globals: The globals to use when running the example.
@@ -100,8 +96,7 @@ class EvalExample:
         module_globals: dict[str, Any] | None = None,
         rewrite_assertions: bool = True,
     ) -> dict[str, Any]:
-        """
-        Run the example and check print statements.
+        """Run the example and check print statements.
 
         :param example: The example to run.
         :param module_globals: The globals to use when running the example.
@@ -120,8 +115,7 @@ class EvalExample:
         module_globals: dict[str, Any] | None = None,
         rewrite_assertions: bool = True,
     ) -> dict[str, Any]:
-        """
-        Run the example and update print statements, requires `--update-examples`.
+        """Run the example and update print statements, requires `--update-examples`.
 
         :param example: The example to run.
         :param module_globals: The globals to use when running the example.
@@ -165,8 +159,7 @@ class EvalExample:
         )
 
     def lint(self, example: CodeExample) -> None:
-        """
-        Lint the example with black and ruff.
+        """Lint the example with black and ruff.
 
         :param example: The example to lint.
         """
@@ -174,8 +167,7 @@ class EvalExample:
         self.lint_ruff(example)
 
     def lint_black(self, example: CodeExample) -> None:
-        """
-        Lint the example using black.
+        """Lint the example using black.
 
         :param example: The example to lint.
         """
@@ -189,8 +181,7 @@ class EvalExample:
         self,
         example: CodeExample,
     ) -> None:
-        """
-        Lint the example using ruff.
+        """Lint the example using ruff.
 
         :param example: The example to lint.
         """
@@ -201,8 +192,7 @@ class EvalExample:
             raise PytestFailed(str(exc), pytrace=False) from None
 
     def format(self, example: CodeExample) -> None:
-        """
-        Format the example with black and ruff, requires `--update-examples`.
+        """Format the example with black and ruff, requires `--update-examples`.
 
         :param example: The example to format.
         """
@@ -210,8 +200,7 @@ class EvalExample:
         self.format_black(example)
 
     def format_black(self, example: CodeExample) -> None:
-        """
-        Format the example using black, requires `--update-examples`.
+        """Format the example using black, requires `--update-examples`.
 
         :param example: The example to lint.
         """
@@ -226,8 +215,7 @@ class EvalExample:
         self,
         example: CodeExample,
     ) -> None:
-        """
-        Format the example using ruff, requires `--update-examples`.
+        """Format the example using ruff, requires `--update-examples`.
 
         :param example: The example to lint.
         """
@@ -248,9 +236,7 @@ class EvalExample:
         example.test_id = self._test_id
 
     def _mark_for_update(self, example: CodeExample) -> None:
-        """
-        Add the example to self.to_update IF it's not already there.
-        """
+        """Add the example to self.to_update IF it's not already there."""
         s = str(example)
         if not any(s == str(ex) for ex in self.to_update):
             self.to_update.append(example)

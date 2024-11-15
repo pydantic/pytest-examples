@@ -2,10 +2,10 @@ from __future__ import annotations as _annotations
 
 import re
 import shlex
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 from textwrap import dedent
-from typing import Iterable
 from uuid import UUID, uuid4
 
 __all__ = 'CodeExample', 'find_examples'
@@ -13,9 +13,7 @@ __all__ = 'CodeExample', 'find_examples'
 
 @dataclass
 class CodeExample:
-    """
-    Information about a Python code example.
-    """
+    """Information about a Python code example."""
 
     source: str
     """The source code of the example, this is has any indent removed."""
@@ -51,9 +49,7 @@ class CodeExample:
         prefix: str = '',
         indent: int = 0,
     ):
-        """
-        Create a `CodeExample`, mostly for testing.
-        """
+        """Create a `CodeExample`, mostly for testing."""
         if end_line is None:
             end_line = start_line + source.count('\n')
         if end_index is None:
@@ -71,14 +67,11 @@ class CodeExample:
 
     @property
     def module_name(self) -> str:
-        """
-        A suitable Python module name for testing the example.
-        """
+        """A suitable Python module name for testing the example."""
         return f'{self.path.stem}_{self.start_line}_{self.end_line}'
 
     def prefix_settings(self) -> dict[str, str]:
-        """
-        Key/value pairs from the prefix line.
+        """Key/value pairs from the prefix line.
 
         This works on the format `py foo="bar" spam="with space"`.
         """
@@ -88,8 +81,7 @@ class CodeExample:
         return settings
 
     def prefix_tags(self) -> set[str]:
-        """
-        Extract tags from the prefix, alternative logic to `prefix_settings`.
+        """Extract tags from the prefix, alternative logic to `prefix_settings`.
 
         This works on the format `py .foo .bar` or `{.py .foo .bar}`.
         """
@@ -103,9 +95,7 @@ class CodeExample:
         return tags
 
     def in_py_file(self) -> bool:
-        """
-        Whether the example is in a Python file.
-        """
+        """Whether the example is in a Python file."""
         return self.path.suffix == '.py'
 
     def __str__(self):
@@ -117,8 +107,7 @@ class CodeExample:
 
 
 def find_examples(*paths: str | Path, skip: bool = False) -> Iterable[CodeExample]:
-    """
-    Find Python code examples in markdown files and python file docstrings.
+    """Find Python code examples in markdown files and python file docstrings.
 
     :param paths: Directories or files to search for examples in.
     :param skip: Whether to exit early and not search for examples, useful when running on windows where search fails.
@@ -177,9 +166,7 @@ def _extract_code_chunks(
 
 
 def remove_indent(text: str) -> tuple[str, int]:
-    """
-    Remove the given indent from each line of text, return the dedented text and the indent.
-    """
+    """Remove the given indent from each line of text, return the dedented text and the indent."""
     first_line_before = text[: text.strip('\n').find('\n')]
     text = dedent(text)
     first_line_after = text[: text.strip('\n').find('\n')]

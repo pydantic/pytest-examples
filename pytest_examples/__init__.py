@@ -1,5 +1,6 @@
 from __future__ import annotations as _annotations
 
+from importlib.metadata import version
 from pathlib import Path
 
 import pytest
@@ -7,7 +8,7 @@ import pytest
 from .eval_example import EvalExample
 from .find_examples import CodeExample, find_examples
 
-__version__ = '0.0.13'
+__version__ = version('pytest_examples')
 __all__ = 'find_examples', 'CodeExample', 'EvalExample'
 
 
@@ -33,9 +34,7 @@ summary: str | None = None
 
 @pytest.fixture(scope='session')
 def _examples_to_update(pytestconfig: pytest.Config) -> list[CodeExample]:
-    """
-    Don't use this directly, it's just  used by
-    """
+    """Don't use this directly, it's just  used by."""
     global summary
 
     examples_to_update: list[CodeExample] = []
@@ -50,9 +49,7 @@ def _examples_to_update(pytestconfig: pytest.Config) -> list[CodeExample]:
 
 @pytest.fixture(name='eval_example')
 def eval_example(tmp_path: Path, request: pytest.FixtureRequest, _examples_to_update) -> EvalExample:
-    """
-    Fixture to return a `EvalExample` instance for running and linting examples.
-    """
+    """Fixture to return a `EvalExample` instance for running and linting examples."""
     eval_ex = EvalExample(tmp_path=tmp_path, pytest_request=request)
     yield eval_ex
     if request.config.getoption('update_examples'):
