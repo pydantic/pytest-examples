@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any, Callable
 from unittest.mock import patch
 
 import pytest
-from black import InvalidInput
+from black.parsing import InvalidInput
 
 from .lint import black_format, code_diff
 from .traceback import create_example_traceback
@@ -40,9 +40,26 @@ def run_code(
     module_globals: dict[str, Any] | None,
     call: str | None,
 ) -> tuple[InsertPrintStatements, dict[str, Any]]:
+    """Run the code example.
+
+    Args:
+        example: The `CodeExample` to run.
+        python_file: The path to the python file.
+        loader: optional loader to use to load the module.
+        config: The `ExamplesConfig` to use.
+        enable_print_mock: If True, mock the `print` function.
+        print_callback: If not None, a callback to call on `print`.
+        module_globals: The extra globals to add before calling the module.
+        call: If not None, a (coroutine) function to call in the module.
+
+    Returns:
+        A tuple of the `InsertPrintStatements` instance and the module's globals.
+    """
     __tracebackhide__ = True
 
     spec = importlib.util.spec_from_file_location('__main__', str(python_file), loader=loader)
+    assert spec is not None, f'Could not load {python_file}'
+    assert spec.loader is not None, f'Loader is None for {python_file}'
     module = importlib.util.module_from_spec(spec)
 
     # does nothing if insert_print_statements is False
@@ -76,37 +93,39 @@ def run_code(
 
 @dataclass(init=False)
 class Arg:
-    string: str | None = None
-    code: str | None = None
+    """A single argument to a print statement."""
+
+    data: str
+    is_str: bool = False
 
     def __init__(self, v: Any):
         if isinstance(v, str):
-            self.string = v
+            self.data = v
+            self.is_str = True
         elif isinstance(v, set):
             # NOTE! this is not recursive
             ordered = ', '.join(repr(x) for x in sorted(v))
-            self.string = f'{{{ordered}}}'
+            self.data = f'{{{ordered}}}'
         else:
-            self.code = re.sub('0x[a-f0-9]{8,12}>', '0x0123456789ab>', str(v))
+            self.data = re.sub('0x[a-f0-9]{8,12}>', '0x0123456789ab>', str(v))
 
     def __str__(self) -> str:
-        if self.string is not None:
-            return self.string
-        else:
-            return self.code
+        return self.data
 
     def format(self, config: ExamplesConfig) -> str:
-        if self.string is not None:
-            return self.string
+        if self.is_str:
+            return self.data
         else:
             try:
-                return black_format(self.code, config)
+                return black_format(self.data, config)
             except InvalidInput:
-                return self.code
+                return self.data
 
 
 @dataclass
 class PrintStatement:
+    """A single print statement."""
+
     line_no: int
     sep: str
     args: list[Arg]

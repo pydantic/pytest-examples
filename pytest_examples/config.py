@@ -6,7 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from black.mode import DEFAULT_LINE_LENGTH, Mode as BlackMode, TargetVersion as BlackTargetVersion
+from black.const import DEFAULT_LINE_LENGTH
+from black.mode import Mode as BlackMode, TargetVersion as BlackTargetVersion
 
 if TYPE_CHECKING:
     from typing import Literal

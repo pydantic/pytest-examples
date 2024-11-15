@@ -16,8 +16,8 @@ def _modify_files(examples: list[CodeExample]) -> str:
     for ex in examples:
         s = str(ex)
         if s in unique_examples:
-            examples = '\n'.join(f'  {ex} (test: {ex.test_id})' for ex in examples)
-            raise RuntimeError(f'Cannot update the same example in separate tests!\nexamples:\n{examples}')
+            examples_str = '\n'.join(f'  {ex} (test: {ex.test_id})' for ex in examples)
+            raise RuntimeError(f'Cannot update the same example in separate tests!\nexamples:\n{examples_str}')
         unique_examples.add(s)
 
     # same file should not appear in more than one group

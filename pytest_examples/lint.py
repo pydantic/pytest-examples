@@ -22,7 +22,7 @@ class FormatError(ValueError):
 
 def ruff_format(
     example: CodeExample,
-    config: ExamplesConfig | None,
+    config: ExamplesConfig,
     *,
     ignore_errors: bool = False,
 ) -> str:
