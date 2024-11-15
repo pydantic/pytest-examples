@@ -174,6 +174,40 @@ def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
     ]
 
 
+def test_black_error_dot_space(pytester: pytest.Pytester):
+    pytester.makefile(
+        '.md',
+        my_file='line 1\nline 2\n```py\nx =[1,2, 3]\n```',
+    )
+    # language=Python
+    pytester.makepyfile(
+        """
+from pytest_examples import find_examples, CodeExample, EvalExample
+import pytest
+
+@pytest.mark.parametrize('example', find_examples('.'), ids=str)
+def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
+    eval_example.config.white_space_dot = True
+    eval_example.lint_black(example)
+"""
+    )
+
+    result = pytester.runpytest('-p', 'no:pretty', '-v')
+    result.assert_outcomes(failed=1)
+
+    failures_start = next(index for index, line in enumerate(result.outlines) if 'FAILURES' in line)
+    failures_end = next(index for index, line in enumerate(result.outlines) if 'short test summary' in line)
+    e_lines = [line.strip() for line in result.outlines[failures_start + 2 : failures_end]]
+    assert e_lines == [
+        'black failed:',
+        '--- before',
+        '+++ after',
+        '@@ -4 +4 @@',
+        '-x·=[1,2,·3]',
+        '+x·=·[1,·2,·3]',
+    ]
+
+
 def test_black_error_multiline(pytester: pytest.Pytester):
     pytester.makefile(
         '.md',
@@ -297,6 +331,36 @@ def print_sub(print_statement):
 @pytest.mark.parametrize('example', find_examples('.'), ids=str)
 def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
     eval_example.print_callback = print_sub
+    eval_example.run_print_check(example, rewrite_assertions=False)
+"""
+    )
+
+    result = pytester.runpytest('-p', 'no:pretty', '-v')
+    result.assert_outcomes(passed=1)
+
+
+def test_print_check_spaces(pytester: pytest.Pytester):
+    pytester.makefile(
+        '.md',
+        # language=Markdown
+        my_file="""
+# My file
+
+```py
+# note trailing space
+
+print('hello ')
+#> hello
+```""",
+    )
+    # language=Python
+    pytester.makepyfile(
+        r"""
+from pytest_examples import find_examples, CodeExample, EvalExample
+import pytest
+
+@pytest.mark.parametrize('example', find_examples('.'), ids=str)
+def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
     eval_example.run_print_check(example, rewrite_assertions=False)
 """
     )

@@ -174,14 +174,16 @@ class InsertPrintStatements:
             self.patch.stop()
 
     def check_print_statements(self, example: CodeExample) -> None:
-        with_prints = self._insert_print_statements(example)
-        if example.source != with_prints:
-            diff = code_diff(example, with_prints)
+        new_code = self.updated_print_statements(example)
+        if new_code is not None:
+            diff = code_diff(example, new_code, self.config)
             pytest.fail(f'Print output changed code:\n{indent(diff, "  ")}', pytrace=False)
 
     def updated_print_statements(self, example: CodeExample) -> str | None:
         with_prints = self._insert_print_statements(example)
-        if example.source != with_prints:
+        # we check against the raw `with_prints` and `with_prints` with trailing whitespace removed
+        # since trailing white space will have already been stripped by pre-commit in `example.source`
+        if example.source not in (with_prints, re.sub(r'[ \t]+\n', '\n', with_prints)):
             return with_prints
 
     def print_statements(self) -> list[PrintStatement]:
