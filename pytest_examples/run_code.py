@@ -1,6 +1,7 @@
 from __future__ import annotations as _annotations
 
 import ast
+import asyncio
 import dataclasses
 import importlib.util
 import inspect
@@ -29,6 +30,7 @@ parent_frame_id = 4 if sys.version_info >= (3, 8) else 3
 
 
 def run_code(
+    *,
     example: CodeExample,
     python_file: Path,
     loader: Loader | None,
@@ -36,6 +38,7 @@ def run_code(
     enable_print_mock: bool,
     print_callback: Callable[[str], str] | None,
     module_globals: dict[str, Any] | None,
+    call: str | None,
 ) -> tuple[InsertPrintStatements, dict[str, Any]]:
     __tracebackhide__ = True
 
@@ -47,10 +50,18 @@ def run_code(
 
     if module_globals:
         module.__dict__.update(module_globals)
+
     try:
         with insert_print:
             sys.modules[spec.name] = module
             spec.loader.exec_module(module)
+            if call:
+                to_call = getattr(module, call, None)
+                if to_call is not None:
+                    if inspect.iscoroutinefunction(to_call):
+                        asyncio.run(to_call())
+                    else:
+                        to_call()
     except KeyboardInterrupt:
         print('KeyboardInterrupt in example')
     except Exception as exc:

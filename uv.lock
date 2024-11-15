@@ -328,8 +328,10 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "coverage", extra = ["toml"] },
-    { name = "pre-commit" },
     { name = "pytest-pretty" },
+]
+lint = [
+    { name = "pre-commit" },
     { name = "ruff" },
 ]
 
@@ -343,8 +345,10 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "coverage", extras = ["toml"], specifier = ">=7.6.1" },
-    { name = "pre-commit", specifier = ">=3.5.0" },
     { name = "pytest-pretty", specifier = ">=1.2.0" },
+]
+lint = [
+    { name = "pre-commit", specifier = ">=3.5.0" },
     { name = "ruff", specifier = ">=0.7.4" },
 ]
 
