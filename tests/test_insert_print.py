@@ -365,3 +365,56 @@ def test_insert_print_check_change(tmp_path, eval_example):
         '   print(1, 2, [3, 4, 5], "hello")\n'
         '  +#> 1 2 [3, 4, 5] hello\n'
     )
+
+
+def test_run_main(tmp_path, eval_example):
+    # note this file is no written here as it's not required
+    md_file = tmp_path / 'test.md'
+    python_code = """
+def main():
+    1 / 0
+"""
+    example = CodeExample.create(python_code, path=md_file)
+    eval_example.set_config(line_length=30)
+    eval_example.run_print_check(example)
+
+    with pytest.raises(ZeroDivisionError):
+        eval_example.run_print_check(example, check_call_main=True)
+
+
+def test_run_main_print(tmp_path, eval_example):
+    # note this file is no written here as it's not required
+    md_file = tmp_path / 'test.md'
+    python_code = """
+main_called = False
+
+def main():
+    global main_called
+    main_called = True
+    print(1, 2, 3)
+    #> 1 2 3
+"""
+    example = CodeExample.create(python_code, path=md_file)
+    eval_example.set_config(line_length=30)
+
+    module_dict = eval_example.run_print_check(example, check_call_main=True)
+    assert module_dict['main_called']
+
+
+def test_run_main_print_async(tmp_path, eval_example):
+    # note this file is no written here as it's not required
+    md_file = tmp_path / 'test.md'
+    python_code = """
+main_called = False
+
+async def main():
+    global main_called
+    main_called = True
+    print(1, 2, 3)
+    #> 1 2 3
+"""
+    example = CodeExample.create(python_code, path=md_file)
+    eval_example.set_config(line_length=30)
+
+    module_dict = eval_example.run_print_check(example, check_call_main=True)
+    assert module_dict['main_called']

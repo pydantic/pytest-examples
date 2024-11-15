@@ -51,8 +51,10 @@ repository = 'https://github.com/pydantic/pytest-examples'
 [dependency-groups]
 dev = [
     'coverage[toml]>=7.6.1',
-    'pre-commit>=3.5.0',
     'pytest-pretty>=1.2.0',
+]
+lint = [
+    'pre-commit>=3.5.0',
     'ruff>=0.7.4',
 ]
 
