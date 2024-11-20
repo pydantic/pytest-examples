@@ -76,7 +76,7 @@ class CodeExample:
         This works on the format `py foo="bar" spam="with space"`.
         """
         settings = {}
-        for m in re.finditer(r'(\S+?)=([\'"])(.+?)\2', self.prefix):
+        for m in re.finditer(r'([^{\s]+?)=([\'"])(.+?)\2', self.prefix):
             settings[m.group(1)] = m.group(3)
         return settings
 
