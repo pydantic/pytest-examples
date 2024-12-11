@@ -68,8 +68,6 @@ def ruff_check(
 
 
 def code_diff(example: CodeExample, after: str, config: ExamplesConfig) -> str:
-    diff = black_diff(sub_space(example.source, config), sub_space(after, config), 'before', 'after')
-
     def replace_at_line(match: re.Match) -> str:
         offset = re.sub(r'\d+', lambda m: str(int(m.group(0)) + example.start_line), match.group(2))
         return f'{match.group(1)}{offset}{match.group(3)}'
