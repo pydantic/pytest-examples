@@ -1,6 +1,7 @@
 from __future__ import annotations as _annotations
 
 import re
+import difflib
 from subprocess import PIPE, Popen
 from textwrap import indent
 from typing import TYPE_CHECKING
@@ -68,7 +69,9 @@ def ruff_check(
 
 
 def code_diff(example: CodeExample, after: str, config: ExamplesConfig) -> str:
-    def replace_at_line(match: re.Match) -> str:
+    before_lines = sub_space(example.source, config).splitlines(keepends=True)
+    after_lines = sub_space(after, config).splitlines(keepends=True)
+    diff = ''.join(difflib.unified_diff(before_lines, after_lines, 'before', 'after'))
         offset = re.sub(r'\d+', lambda m: str(int(m.group(0)) + example.start_line), match.group(2))
         return f'{match.group(1)}{offset}{match.group(3)}'
 
