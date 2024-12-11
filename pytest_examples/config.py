@@ -28,6 +28,7 @@ class ExamplesConfig:
     ruff_select: list[str] | None = None
     ruff_ignore: list[str] | None = None
     white_space_dot: bool = False
+    first_party: list[str] | None = None
     """If True, replace spaces with `·` in example diffs."""
 
     def black_mode(self):
@@ -69,10 +70,11 @@ class ExamplesConfig:
 
         if self.upgrade:
             select.append('UP')
-        if self.isort:
+        if self.isort and 'I' not in select:
             select.append('I')
 
-        if self.ruff_ignore:
+        if self.first_party:
+            args.append(f'--first-party={",".join(self.first_party)}')
             ignore.extend(self.ruff_ignore)
 
         if select:
