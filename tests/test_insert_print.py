@@ -432,3 +432,22 @@ async def main():
 
     module_dict = eval_example.run_print_check(example, call='main')
     assert module_dict['main_called']
+
+
+def test_custom_include_print(tmp_path, eval_example):
+    # note this file is no written here as it's not required
+    md_file = tmp_path / 'test.md'
+    python_code = """
+print('yes')
+#> yes
+print('no')
+"""
+    example = CodeExample.create(python_code, path=md_file)
+    eval_example.set_config(line_length=30)
+
+    def custom_include_print(path, frame, args):
+        return 'yes' in args
+
+    eval_example.include_print = custom_include_print
+
+    eval_example.run_print_check(example, call='main')

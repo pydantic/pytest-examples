@@ -9,7 +9,7 @@ from _pytest.outcomes import Failed as PytestFailed
 
 from .config import DEFAULT_LINE_LENGTH, ExamplesConfig
 from .lint import FormatError, black_check, black_format, ruff_check, ruff_format
-from .run_code import InsertPrintStatements, run_code
+from .run_code import IncludePrint, InsertPrintStatements, run_code
 
 if TYPE_CHECKING:
     from typing import Literal
@@ -29,6 +29,7 @@ class EvalExample:
         self.to_update: list[CodeExample] = []
         self.config: ExamplesConfig = ExamplesConfig()
         self.print_callback: Callable[[str], str] | None = None
+        self.include_print: IncludePrint | None = None
 
     def set_config(
         self,
@@ -172,6 +173,7 @@ class EvalExample:
             config=self.config,
             enable_print_mock=enable_print_mock,
             print_callback=self.print_callback,
+            include_print=self.include_print,
             module_globals=module_globals,
             call=call,
         )
