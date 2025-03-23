@@ -156,8 +156,8 @@ class MockPrintFunction:
         frame = inspect.stack()[parent_frame_id]
 
         if self._include_file(frame, args):
-            # -1 to account for the line number being 1-indexed
-            s = PrintStatement(frame.lineno, sep, [Arg(arg) for arg in args])
+            lineno = self._find_line_number(frame)
+            s = PrintStatement(lineno, sep, [Arg(arg) for arg in args])
             self.statements.append(s)
 
     def _include_file(self, frame: inspect.FrameInfo, args: Sequence[Any]) -> bool:
@@ -165,6 +165,17 @@ class MockPrintFunction:
             return self.include_print(self.file, frame, args)
         else:
             return self.file.samefile(frame.filename)
+
+    def _find_line_number(self, inspect_frame: inspect.FrameInfo) -> int:
+        """Find the line number of the print statement in the file that is being executed."""
+        frame = inspect_frame.frame
+        while True:
+            if self.file.samefile(frame.f_code.co_filename):
+                return frame.f_lineno
+            elif frame.f_back:
+                frame = frame.f_back
+            else:
+                raise RuntimeError(f'Could not find line number of print statement at {inspect_frame}')
 
 
 class InsertPrintStatements:
@@ -256,18 +267,6 @@ comment_prefix_re = re.compile(f'^ *{re.escape(comment_prefix)}', re.MULTILINE)
 triple_quotes_prefix_re = re.compile('^ *(?:"{3}|\'{3})', re.MULTILINE)
 
 
-def find_print_line(lines: list[str], line_no: int) -> int:
-    """For 3.7 we have to reverse through lines to find the print statement lint."""
-    return line_no
-
-    for back in range(100):
-        new_line_no = line_no - back
-        m = re.search(r'^ *print\(', lines[new_line_no - 1])
-        if m:
-            return new_line_no
-    return line_no
-
-
 def remove_old_print(lines: list[str], line_index: int) -> None:
     """Remove the old print statement."""
     try:
@@ -294,12 +293,12 @@ def remove_old_print(lines: list[str], line_index: int) -> None:
 def find_print_location(example: CodeExample, line_no: int) -> tuple[int, int]:
     """Find the line and column of the print statement.
 
-    :param example: the `CodeExample`
-    :param line_no: The line number on which the print statement starts (or approx on 3.7)
-    :return: tuple if `(line, column)` of the print statement
-    """
-    # For 3.7 we have to reverse through lines to find the print statement lint
+    Args:
+        example: the `CodeExample`
+        line_no: The line number on which the print statement starts or approx
 
+    Return: tuple if `(line, column)` of the print statement
+    """
     m = ast.parse(example.source, filename=example.path.name)
     return find_print(m, line_no) or (line_no, 0)
 

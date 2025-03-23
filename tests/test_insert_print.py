@@ -1,5 +1,7 @@
 from __future__ import annotations as _annotations
 
+import sys
+
 import pytest
 from _pytest.outcomes import Failed
 
@@ -397,8 +399,6 @@ def main():
 
 
 def test_run_main_print(tmp_path, eval_example):
-    # note this file is no written here as it's not required
-    md_file = tmp_path / 'test.md'
     python_code = """
 main_called = False
 
@@ -408,7 +408,8 @@ def main():
     print(1, 2, 3)
     #> 1 2 3
 """
-    example = CodeExample.create(python_code, path=md_file)
+    # note this file is no written here as it's not required
+    example = CodeExample.create(python_code, path=tmp_path / 'test.md')
     eval_example.set_config(line_length=30)
 
     module_dict = eval_example.run_print_check(example, call='main')
@@ -416,8 +417,6 @@ def main():
 
 
 def test_run_main_print_async(tmp_path, eval_example):
-    # note this file is no written here as it's not required
-    md_file = tmp_path / 'test.md'
     python_code = """
 main_called = False
 
@@ -427,7 +426,8 @@ async def main():
     print(1, 2, 3)
     #> 1 2 3
 """
-    example = CodeExample.create(python_code, path=md_file)
+    # note this file is no written here as it's not required
+    example = CodeExample.create(python_code, path=tmp_path / 'test.md')
     eval_example.set_config(line_length=30)
 
     module_dict = eval_example.run_print_check(example, call='main')
@@ -435,19 +435,44 @@ async def main():
 
 
 def test_custom_include_print(tmp_path, eval_example):
-    # note this file is no written here as it's not required
-    md_file = tmp_path / 'test.md'
     python_code = """
 print('yes')
 #> yes
 print('no')
 """
-    example = CodeExample.create(python_code, path=md_file)
+    # note this file is no written here as it's not required
+    example = CodeExample.create(python_code, path=tmp_path / 'test.md')
     eval_example.set_config(line_length=30)
 
     def custom_include_print(path, frame, args):
         return 'yes' in args
 
     eval_example.include_print = custom_include_print
+
+    eval_example.run_print_check(example, call='main')
+
+
+def test_print_different_file(tmp_path, eval_example):
+    other_file = tmp_path / 'other.py'
+    other_code = """
+def does_print():
+    print('hello')
+    """
+    other_file.write_text(other_code)
+    sys.path.append(str(tmp_path))
+    python_code = """
+import other
+
+other.does_print()
+#> hello
+"""
+    example = CodeExample.create(python_code, path=tmp_path / 'test.md')
+
+    eval_example.include_print = lambda p, f, a: True
+
+    eval_example.run_print_check(example, call='main')
+
+    del sys.modules['other']
+    other_file.write_text(('\n' * 30) + other_code)
 
     eval_example.run_print_check(example, call='main')

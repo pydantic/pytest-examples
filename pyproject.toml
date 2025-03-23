@@ -9,7 +9,7 @@ include = ["/README.md", "/Makefile", "/pytest_examples", "/tests"]
 
 [project]
 name = "pytest-examples"
-version = "0.0.16"
+version = "0.0.17"
 description = "Pytest plugin for testing examples in docstrings and markdown files."
 authors = [
     {name = "Samuel Colvin", email = "s@muelcolvin.com"},
