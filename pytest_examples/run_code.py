@@ -241,9 +241,8 @@ class InsertPrintStatements:
     def _insert_print_args(
         self, lines: list[str], statement: PrintStatement, in_python: bool, line_index: int, col: int
     ) -> None:
-        single_line = statement.sep.join(map(str, statement.args))
-        if self.print_callback:
-            single_line = self.print_callback(single_line)
+        formatted_args = [self.print_callback(str(arg)) if self.print_callback else str(arg) for arg in statement.args]
+        single_line = statement.sep.join(formatted_args)
         indent_str = ' ' * col
         max_single_length = self.config.line_length - len(indent_str)
         if '\n' not in single_line and len(single_line) + len(comment_prefix) < max_single_length:
