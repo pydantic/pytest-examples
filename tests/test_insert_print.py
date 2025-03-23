@@ -472,6 +472,7 @@ other.does_print()
 
     eval_example.run_print_check(example, call='main')
 
+    del sys.modules['other']
     other_file.write_text(('\n' * 30) + other_code)
 
     eval_example.run_print_check(example, call='main')
