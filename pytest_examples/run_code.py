@@ -7,6 +7,7 @@ import importlib.util
 import inspect
 import re
 import sys
+from collections.abc import Sequence
 from dataclasses import dataclass
 from importlib.abc import Loader
 from pathlib import Path
@@ -24,9 +25,10 @@ if TYPE_CHECKING:
     from .config import ExamplesConfig
     from .find_examples import CodeExample
 
-__all__ = 'run_code', 'InsertPrintStatements'
+__all__ = 'run_code', 'InsertPrintStatements', 'IncludePrint'
 
 parent_frame_id = 4 if sys.version_info >= (3, 8) else 3
+IncludePrint = Callable[[Path, inspect.FrameInfo, Sequence[Any]], bool]
 
 
 def run_code(
@@ -37,6 +39,7 @@ def run_code(
     config: ExamplesConfig,
     enable_print_mock: bool,
     print_callback: Callable[[str], str] | None,
+    include_print: IncludePrint | None,
     module_globals: dict[str, Any] | None,
     call: str | None,
 ) -> tuple[InsertPrintStatements, dict[str, Any]]:
@@ -49,6 +52,7 @@ def run_code(
         config: The `ExamplesConfig` to use.
         enable_print_mock: If True, mock the `print` function.
         print_callback: If not None, a callback to call on `print`.
+        include_print: If not None, a function to call to determine if the print statement should be included.
         module_globals: The extra globals to add before calling the module.
         call: If not None, a (coroutine) function to call in the module.
 
@@ -63,7 +67,7 @@ def run_code(
     module = importlib.util.module_from_spec(spec)
 
     # does nothing if insert_print_statements is False
-    insert_print = InsertPrintStatements(python_file, config, enable_print_mock, print_callback)
+    insert_print = InsertPrintStatements(python_file, config, enable_print_mock, print_callback, include_print)
 
     if module_globals:
         module.__dict__.update(module_globals)
@@ -141,26 +145,40 @@ def not_print(*args):
 
 
 class MockPrintFunction:
-    def __init__(self, file: Path) -> None:
+    __slots__ = 'file', 'statements', 'include_print'
+
+    def __init__(self, file: Path, include_print: IncludePrint | None) -> None:
         self.file = file
         self.statements: list[PrintStatement] = []
+        self.include_print = include_print
 
     def __call__(self, *args: Any, sep: str = ' ', **kwargs: Any) -> None:
         frame = inspect.stack()[parent_frame_id]
 
-        if self.file.samefile(frame.filename):
+        if self._include_file(frame, args):
             # -1 to account for the line number being 1-indexed
             s = PrintStatement(frame.lineno, sep, [Arg(arg) for arg in args])
             self.statements.append(s)
 
+    def _include_file(self, frame: inspect.FrameInfo, args: Sequence[Any]) -> bool:
+        if self.include_print:
+            return self.include_print(self.file, frame, args)
+        else:
+            return self.file.samefile(frame.filename)
+
 
 class InsertPrintStatements:
     def __init__(
-        self, python_path: Path, config: ExamplesConfig, enable: bool, print_callback: Callable[[str], str] | None
+        self,
+        python_path: Path,
+        config: ExamplesConfig,
+        enable: bool,
+        print_callback: Callable[[str], str] | None,
+        include_print: IncludePrint | None,
     ):
         self.file = python_path
         self.config = config
-        self.print_func = MockPrintFunction(python_path) if enable else None
+        self.print_func = MockPrintFunction(python_path, include_print) if enable else None
         self.print_callback = print_callback
         self.patch = None
 
