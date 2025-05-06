@@ -9,11 +9,9 @@ include = ["/README.md", "/Makefile", "/pytest_examples", "/tests"]
 
 [project]
 name = "pytest-examples"
-version = "0.0.17"
+version = "0.0.18"
 description = "Pytest plugin for testing examples in docstrings and markdown files."
-authors = [
-    {name = "Samuel Colvin", email = "s@muelcolvin.com"},
-]
+authors = [{ name = "Samuel Colvin", email = "s@muelcolvin.com" }]
 license = "MIT"
 readme = "README.md"
 classifiers = [
@@ -36,11 +34,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 requires-python = ">=3.8"
-dependencies = [
-    "pytest>=7",
-    "black>=23",
-    "ruff>=0.5.0",
-]
+dependencies = ["pytest>=7", "black>=23", "ruff>=0.5.0"]
 
 [project.entry-points.pytest11]
 examples = "pytest_examples"
@@ -49,15 +43,8 @@ examples = "pytest_examples"
 repository = "https://github.com/pydantic/pytest-examples"
 
 [dependency-groups]
-dev = [
-    "coverage[toml]>=7.6.1",
-    "pytest-pretty>=1.2.0",
-]
-lint = [
-    "pre-commit>=3.5.0",
-    "pyright>=1.1.389",
-    "ruff>=0.7.4",
-]
+dev = ["coverage[toml]>=7.6.1", "pytest-pretty>=1.2.0"]
+lint = ["pre-commit>=3.5.0", "pyright>=1.1.389", "ruff>=0.7.4"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "example"]
@@ -67,22 +54,11 @@ xfail_strict = true
 [tool.ruff]
 line-length = 120
 target-version = "py39"
-include = [
-    "pytest_examples/**/*.py",
-    "tests/**/*.py",
-    "examples/**/*.py",
-]
+include = ["pytest_examples/**/*.py", "tests/**/*.py", "examples/**/*.py"]
 exclude = ["tests/cases_update/*.py"]
 
 [tool.ruff.lint]
-extend-select = [
-    "Q",
-    "RUF100",
-    "C90",
-    "UP",
-    "I",
-    "D",
-]
+extend-select = ["Q", "RUF100", "C90", "UP", "I", "D"]
 flake8-quotes = { inline-quotes = "single", multiline-quotes = "double" }
 isort = { combine-as-imports = true, known-first-party = ["pytest_examples"] }
 mccabe = { max-complexity = 15 }
@@ -120,5 +96,8 @@ exclude_lines = [
 #typeCheckingMode = "strict"
 reportUnnecessaryTypeIgnoreComment = true
 reportMissingTypeStubs = false
+reportUnusedCallResult = false
+reportExplicitAny = false
+reportAny = false
 include = ["pytest_examples"]
 venvPath = ".venv"

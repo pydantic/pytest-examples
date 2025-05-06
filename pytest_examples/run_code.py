@@ -275,7 +275,7 @@ def remove_old_print(lines: list[str], line_index: int) -> None:
         return
 
     if triple_quotes_prefix_re.search(next_line):
-        for i in range(2, 100):
+        for i in range(2, 10_000):
             if triple_quotes_prefix_re.search(lines[line_index + i]):
                 del lines[line_index + 1 : line_index + i + 1]
                 return
