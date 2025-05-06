@@ -55,7 +55,7 @@ def ruff_check(
     stdout, stderr = p.communicate(example.source, timeout=10)
     if p.returncode == 1 and stdout:
 
-        def replace_offset(m: re.Match):
+        def replace_offset(m: re.Match[str]):
             line_number = int(m.group(1))
             return f'{example.path}:{line_number + example.start_line}'
 
@@ -88,7 +88,7 @@ def black_check(example: CodeExample, config: ExamplesConfig) -> None:
 def code_diff(example: CodeExample, after: str, config: ExamplesConfig) -> str:
     diff = black_diff(sub_space(example.source, config), sub_space(after, config), 'before', 'after')
 
-    def replace_at_line(match: re.Match) -> str:
+    def replace_at_line(match: re.Match[str]) -> str:
         offset = re.sub(r'\d+', lambda m: str(int(m.group(0)) + example.start_line), match.group(2))
         return f'{match.group(1)}{offset}{match.group(3)}'
 

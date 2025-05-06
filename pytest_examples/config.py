@@ -43,10 +43,10 @@ class ExamplesConfig:
         return hashlib.md5(str(self).encode()).hexdigest()
 
     def ruff_config(self) -> tuple[str, ...]:
-        config_lines = []
-        select = []
-        ignore = []
-        args = []
+        config_lines: list[str] = []
+        select: list[str] = []
+        ignore: list[str] = []
+        args: list[str] = []
 
         # line length is enforced by black
         if self.ruff_line_length is None:
