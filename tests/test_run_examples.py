@@ -171,6 +171,7 @@ def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
         '@@ -4 +4 @@',
         '-x =[1,2, 3]',
         '+x = [1, 2, 3]',
+        '',
     ]
 
 
@@ -205,6 +206,7 @@ def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
         '@@ -4 +4 @@',
         '-x·=[1,2,·3]',
         '+x·=·[1,·2,·3]',
+        '',
     ]
 
 
@@ -251,6 +253,7 @@ def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
         '-    3',
         '-]',
         '+x = [1, 2, 3]',
+        '',
     ]
 
 
