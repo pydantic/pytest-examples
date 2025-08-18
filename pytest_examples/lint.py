@@ -57,9 +57,9 @@ def ruff_check(
 
         def replace_offset(m: re.Match[str]):
             line_number = int(m.group(1))
-            return f'{example.path}:{line_number + example.start_line}'
+            return f' --> {example.path}:{line_number + example.start_line}'
 
-        output = re.sub(r'^-:(\d+)', replace_offset, stdout, flags=re.M)
+        output = re.sub(r'^ --> -:(\d+)', replace_offset, stdout, flags=re.M)
         raise FormatError(f'ruff failed:\n{indent(output, "  ")}')
     elif p.returncode != 0:
         raise RuntimeError(f'Error running ruff, return code {p.returncode}:\n{stderr or stdout}')

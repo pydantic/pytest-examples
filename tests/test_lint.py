@@ -24,11 +24,11 @@ def test_ruff_config():
 def test_ruff_offset():
     code = 'print(x)\n'
     example = CodeExample.create(code)
-    with pytest.raises(FormatError, match='testing.md:1:7: F821 Undefined name'):
+    with pytest.raises(FormatError, match='F821 Undefined name `x`\n   --> testing.md:1:7'):
         ruff_check(example, ExamplesConfig())
 
     example = CodeExample.create(code, start_line=10)
-    with pytest.raises(FormatError, match='testing.md:11:7: F821 Undefined name'):
+    with pytest.raises(FormatError, match='F821 Undefined name `x`\n   --> testing.md:11:7'):
         ruff_check(example, ExamplesConfig())
 
 

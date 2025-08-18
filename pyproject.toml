@@ -34,7 +34,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 requires-python = ">=3.8"
-dependencies = ["pytest>=7", "black>=23", "ruff>=0.5.0"]
+dependencies = ["pytest>=7", "black>=23", "ruff>=0.12.9"]
 
 [project.entry-points.pytest11]
 examples = "pytest_examples"
