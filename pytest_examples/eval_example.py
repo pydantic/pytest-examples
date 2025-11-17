@@ -43,6 +43,7 @@ class EvalExample:
         ruff_line_length: int | None = None,
         ruff_select: list[str] | None = None,
         ruff_ignore: list[str] | None = None,
+        encoding: str | None = 'utf-8',
     ):
         """Set the config for lints.
 
@@ -56,6 +57,7 @@ class EvalExample:
             ruff_line_length: In general, we disable line-length checks in ruff, to let black take care of them.
             ruff_select: Ruff rules to select
             ruff_ignore: Ruff rules to ignore
+            encoding: File encoding to use for write file operations, defaults to 'utf-8'.
         """
         self.config = ExamplesConfig(
             line_length=line_length,
@@ -67,6 +69,7 @@ class EvalExample:
             ruff_line_length=ruff_line_length,
             ruff_select=ruff_select,
             ruff_ignore=ruff_ignore,
+            encoding=encoding,
         )
 
     @property
@@ -269,5 +272,5 @@ class EvalExample:
 
     def _write_file(self, example: CodeExample) -> Path:
         python_file = self.tmp_path / f'{example.module_name}.py'
-        python_file.write_text(example.source)
+        python_file.write_text(example.source, encoding=self.config.encoding)
         return python_file
