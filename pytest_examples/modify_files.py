@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from .find_examples import CodeExample
 
 
-def _modify_files(examples: list[CodeExample]) -> str:
+def _modify_files(examples: list[CodeExample], encoding: str | None = 'utf-8') -> str:
     """Internal use only, update examples in place."""
     # The same example shouldn't appear more than once
     unique_examples: set[str] = set()
@@ -34,7 +34,7 @@ def _modify_files(examples: list[CodeExample]) -> str:
     msg = [f'pytest-examples: {len(examples)} examples to update in {len(files)} file(s)...']
 
     for path, g in groupby(examples, key=lambda ex: ex.path):
-        content = path.read_text()
+        content = path.read_text(encoding=encoding)
         count = 0
         for ex in g:
             example: CodeExample = ex
@@ -45,6 +45,6 @@ def _modify_files(examples: list[CodeExample]) -> str:
             count += 1
 
         msg.append(f'  {path} {count} examples updated')
-        path.write_text(content, encoding='utf-8')
+        path.write_text(content, encoding=encoding)
 
     return '\n'.join(msg)
