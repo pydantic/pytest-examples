@@ -45,6 +45,6 @@ def _modify_files(examples: list[CodeExample]) -> str:
             count += 1
 
         msg.append(f'  {path} {count} examples updated')
-        path.write_text(content)
+        path.write_text(content, encoding='utf-8')
 
     return '\n'.join(msg)
