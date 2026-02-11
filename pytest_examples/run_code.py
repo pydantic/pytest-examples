@@ -7,12 +7,12 @@ import importlib.util
 import inspect
 import re
 import sys
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from importlib.abc import Loader
 from pathlib import Path
 from textwrap import indent
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
