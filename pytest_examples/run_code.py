@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
 __all__ = 'run_code', 'InsertPrintStatements', 'IncludePrint'
 
-parent_frame_id = 4 if sys.version_info >= (3, 8) else 3
+parent_frame_id = 4
 IncludePrint = Callable[[Path, inspect.FrameInfo, Sequence[Any]], bool]
 
 
