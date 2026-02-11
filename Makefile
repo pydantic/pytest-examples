@@ -28,13 +28,14 @@ typecheck:
 test:
 	uv run pytest
 
-.PHONY: test-all-python  # Run tests on Python 3.9 to 3.13
+.PHONY: test-all-python  # Run tests on Python 3.9 to 3.14
 test-all-python:
 	UV_PROJECT_ENVIRONMENT=.venv39 uv run --python 3.9 coverage run -p -m pytest
 	UV_PROJECT_ENVIRONMENT=.venv310 uv run --python 3.10 coverage run -p -m pytest
 	UV_PROJECT_ENVIRONMENT=.venv311 uv run --python 3.11 coverage run -p -m pytest
 	UV_PROJECT_ENVIRONMENT=.venv312 uv run --python 3.12 coverage run -p -m pytest
 	UV_PROJECT_ENVIRONMENT=.venv313 uv run --python 3.13 coverage run -p -m pytest
+	UV_PROJECT_ENVIRONMENT=.venv314 uv run --python 3.14 coverage run -p -m pytest
 	@uv run coverage combine
 	@uv run coverage report
 
