@@ -1,6 +1,7 @@
 from __future__ import annotations as _annotations
 
 import hashlib
+import re
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -21,7 +22,7 @@ class ExamplesConfig:
     line_length: int = DEFAULT_LINE_LENGTH
     quotes: Literal['single', 'double', 'either'] = 'either'
     magic_trailing_comma: bool = True
-    target_version: Literal['py37', 'py38', 'py39', 'py310', 'py311'] = 'py37'
+    target_version: str | None = 'py37'
     upgrade: bool = False
     isort: bool = False
     ruff_line_length: int | None = None
@@ -29,6 +30,11 @@ class ExamplesConfig:
     ruff_ignore: list[str] | None = None
     white_space_dot: bool = False
     """If True, replace spaces with `·` in example diffs."""
+
+    def __post_init__(self):
+        """Validate the configuration after initialization."""
+        if self.target_version and not re.match(r'py\d{2,}$', self.target_version):
+            raise ValueError(f'Invalid target version: {self.target_version!r}, must be like "py37"')
 
     def black_mode(self):
         return BlackMode(
