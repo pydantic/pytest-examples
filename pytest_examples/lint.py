@@ -51,7 +51,7 @@ def ruff_check(
     ruff = find_ruff_bin()
     args = ruff, 'check', '-', *config.ruff_config(), *extra_ruff_args
 
-    p = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, universal_newlines=True)
+    p = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, encoding=config.encoding)
     stdout, stderr = p.communicate(example.source, timeout=10)
     if p.returncode == 1 and stdout:
 
