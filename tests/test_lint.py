@@ -24,11 +24,24 @@ def test_ruff_config():
 def test_ruff_offset():
     code = 'print(x)\n'
     example = CodeExample.create(code)
-    with pytest.raises(FormatError, match='testing.md:1:7: F821 Undefined name'):
+    with pytest.raises(FormatError, match=r'F821 Undefined name `x`\n +--> testing.md:1:7'):
         ruff_check(example, ExamplesConfig())
 
     example = CodeExample.create(code, start_line=10)
-    with pytest.raises(FormatError, match='testing.md:11:7: F821 Undefined name'):
+    with pytest.raises(FormatError, match=r'F821 Undefined name `x`\n +--> testing.md:11:7'):
+        ruff_check(example, ExamplesConfig())
+
+
+def test_ruff_offset_multiline():
+    # the error is on line 10 of the example, so ruff widens the gutter and indents `-->` further;
+    # the offset substitution must still rewrite the `-` placeholder to the real path
+    code = 'x = 1\n' * 9 + 'print(y)\n'
+    example = CodeExample.create(code)
+    with pytest.raises(FormatError, match=r'F821 Undefined name `y`\n +--> testing.md:10:7'):
+        ruff_check(example, ExamplesConfig())
+
+    example = CodeExample.create(code, start_line=10)
+    with pytest.raises(FormatError, match=r'F821 Undefined name `y`\n +--> testing.md:20:7'):
         ruff_check(example, ExamplesConfig())
 
 
