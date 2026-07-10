@@ -29,8 +29,6 @@ class ExamplesConfig:
     ruff_ignore: list[str] | None = None
     white_space_dot: bool = False
     """If True, replace spaces with `·` in example diffs."""
-    encoding: str | None = 'utf-8'
-    """File encoding to use for write file operations. Default is 'utf-8'."""
 
     def black_mode(self):
         return BlackMode(
