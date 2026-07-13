@@ -367,3 +367,23 @@ def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
 
     result = pytester.runpytest('-p', 'no:pretty', '-v')
     result.assert_outcomes(passed=1)
+
+
+def test_unicode_emoji(pytester: pytest.Pytester):
+    pytester.makefile(
+        '.md',
+        my_file="```py\nprint('🚀 ✓')\n#> 🚀 ✓\n```",
+    )
+    pytester.makepyfile(
+        """
+from pytest_examples import find_examples, CodeExample, EvalExample
+import pytest
+
+@pytest.mark.parametrize('example', find_examples('.'), ids=str)
+def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
+    eval_example.run_print_check(example)
+"""
+    )
+
+    result = pytester.runpytest('-p', 'no:pretty', '-v')
+    result.assert_outcomes(passed=1)

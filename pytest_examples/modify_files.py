@@ -34,7 +34,7 @@ def _modify_files(examples: list[CodeExample]) -> str:
     msg = [f'pytest-examples: {len(examples)} examples to update in {len(files)} file(s)...']
 
     for path, g in groupby(examples, key=lambda ex: ex.path):
-        content = path.read_text()
+        content = path.read_text(encoding='utf-8')
         count = 0
         for ex in g:
             example: CodeExample = ex
@@ -45,6 +45,6 @@ def _modify_files(examples: list[CodeExample]) -> str:
             count += 1
 
         msg.append(f'  {path} {count} examples updated')
-        path.write_text(content)
+        path.write_text(content, encoding='utf-8')
 
     return '\n'.join(msg)

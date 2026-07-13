@@ -270,5 +270,5 @@ class EvalExample:
 
     def _write_file(self, example: CodeExample) -> Path:
         python_file = self.tmp_path / f'{example.module_name}.py'
-        python_file.write_text(example.source)
+        python_file.write_text(example.source, encoding='utf-8')
         return python_file
