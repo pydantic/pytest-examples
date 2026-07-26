@@ -49,7 +49,9 @@ def ruff_check(
     extra_ruff_args: tuple[str, ...] = (),
 ) -> str:
     ruff = find_ruff_bin()
-    args = ruff, 'check', '-', *config.ruff_config(), *extra_ruff_args
+    # Pin the concise output format: ruff 0.16 made the grouped `full` format the default, which breaks the
+    # `^-:(\d+)` offset rewriting below and the readable one-line-per-error output.
+    args = ruff, 'check', '-', '--output-format=concise', *config.ruff_config(), *extra_ruff_args
 
     p = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, encoding='utf-8')
     stdout, stderr = p.communicate(example.source, timeout=10)
