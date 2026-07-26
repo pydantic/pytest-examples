@@ -44,7 +44,10 @@ class ExamplesConfig:
 
     def ruff_config(self) -> tuple[str, ...]:
         config_lines: list[str] = []
-        select: list[str] = []
+        # Pin ruff's classic default rule set as our base rather than inheriting ruff's evolving defaults:
+        # ruff 0.16 added `I` (isort) and `FA` (future-annotations) to the defaults, which would silently
+        # start flagging examples that pytest-examples never opted into. Opt-in flags extend this base.
+        select: list[str] = ['E4', 'E7', 'E9', 'F']
         ignore: list[str] = []
         args: list[str] = []
 
@@ -76,8 +79,7 @@ class ExamplesConfig:
             ignore.extend(self.ruff_ignore)
 
         if select:
-            # use extend to not disable default select
-            args.append(f'--extend-select={",".join(select)}')
+            args.append(f'--select={",".join(select)}')
         if ignore:
             args.append(f'--ignore={",".join(ignore)}')
 
