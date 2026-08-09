@@ -299,7 +299,27 @@ def find_print_location(example: CodeExample, line_no: int) -> tuple[int, int]:
     Return: tuple if `(line, column)` of the print statement
     """
     m = ast.parse(example.source, filename=example.path.name)
-    return find_print(m, line_no) or (line_no, 0)
+    return find_print(m, line_no) or (line_no, source_line_indent(example, line_no))
+
+
+def source_line_indent(example: CodeExample, line_no: int) -> int:
+    """Indentation of `line_no`, used when the print call cannot be located in the AST.
+
+    `find_print` only recognises a literal `print(...)` -- a call whose func is a `Name`
+    with id 'print'. Output also reaches the mock through forms it cannot match:
+    `builtins.print(...)`, a local alias, or a method that prints internally. Falling
+    back to column 0 for those wrote the inserted block hard against the left margin,
+    even inside an indented function body.
+
+    The line's own indentation is the right answer whichever form the call took, since
+    the block is inserted directly beneath it.
+    """
+    lines = example.source.splitlines()
+    # line_no is 1-based, and can be approximate, so guard the lookup.
+    if not 1 <= line_no <= len(lines):
+        return 0
+    line = lines[line_no - 1]
+    return len(line) - len(line.lstrip())
 
 
 # ast nodes that have a body
