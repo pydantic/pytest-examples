@@ -525,6 +525,6 @@ def test_print_location_still_uses_the_ast_for_a_bare_print():
 
 def test_print_location_tolerates_an_out_of_range_line():
     """line_no is documented as possibly approximate, so the lookup must not raise."""
-    example = CodeExample.create("print(1)" + chr(10), path=Path('test.md'))
+    example = CodeExample.create('print(1)' + chr(10), path=Path('test.md'))
 
     assert find_print_location(example, 999) == (999, 0)
