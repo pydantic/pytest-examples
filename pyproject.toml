@@ -53,8 +53,10 @@ xfail_strict = true
 [tool.ruff]
 line-length = 120
 target-version = "py39"
-include = ["pytest_examples/**/*.py", "tests/**/*.py", "examples/**/*.py"]
-exclude = ["tests/cases_update/*.py"]
+include = ["pytest_examples/**/*.py", "tests/**/*.py", "example/**/*.py"]
+# `example/test_example.py` is its own test data: it demonstrates the `#>` print marker, which
+#  `docstring-code-format` rewrites to `# >`, and two docstring styles that `D212` would collapse.
+exclude = ["tests/cases_update/*.py", "example/test_example.py"]
 
 [tool.ruff.lint]
 extend-select = ["Q", "RUF100", "C90", "UP", "I", "D"]
