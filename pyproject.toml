@@ -96,6 +96,14 @@ exclude_lines = [
 reportUnnecessaryTypeIgnoreComment = true
 reportMissingTypeStubs = false
 reportUnusedCallResult = false
+# Every parameter, return and variable in the package is annotated; these keep it so.
+#  `reportUnknownMemberType` is left out: it gates the typing of our dependencies rather
+#  than of this package, and pytest types `request.node` as `Any` on purpose.
+#  https://github.com/pytest-dev/pytest/issues/13888#issuecomment-3511168937
+reportMissingParameterType = "error"
+reportUnknownParameterType = "error"
+reportUnknownVariableType = "error"
+reportUnknownArgumentType = "error"
 reportExplicitAny = false
 reportAny = false
 include = ["pytest_examples"]
