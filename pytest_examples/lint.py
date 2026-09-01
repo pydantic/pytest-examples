@@ -1,7 +1,7 @@
 from __future__ import annotations as _annotations
 
 import re
-from subprocess import PIPE, Popen
+from subprocess import PIPE, Popen, TimeoutExpired
 from textwrap import indent
 from typing import TYPE_CHECKING
 
@@ -52,7 +52,15 @@ def ruff_check(
     args = ruff, 'check', '-', *config.ruff_config(), *extra_ruff_args
 
     p = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, encoding='utf-8')
-    stdout, stderr = p.communicate(example.source, timeout=10)
+    try:
+        stdout, stderr = p.communicate(example.source, timeout=10)
+    # a timed out `communicate` leaves the child running with its pipes open, so reap it before giving up
+    #  https://docs.python.org/3/library/subprocess.html#subprocess.Popen.communicate
+    except TimeoutExpired:
+        p.kill()
+        p.communicate()
+        raise
+
     if p.returncode == 1 and stdout:
 
         def replace_offset(m: re.Match[str]):
