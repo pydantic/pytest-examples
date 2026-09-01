@@ -358,12 +358,12 @@ def expr_last_line(c: ast.expr) -> int:
             return maybe_plus_1(c, expr_last_line(c.args[-1]))
         else:
             return c.lineno
-    elif isinstance(c, (ast.List, ast.Tuple, ast.Set)):
+    elif isinstance(c, ast.List | ast.Tuple | ast.Set):
         if c.elts:
             return maybe_plus_1(c, expr_last_line(c.elts[-1]))
         else:
             return c.lineno
-    elif isinstance(c, (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)):
+    elif isinstance(c, ast.ListComp | ast.SetComp | ast.DictComp | ast.GeneratorExp):
         gen = c.generators[-1]
         if gen.ifs:
             return maybe_plus_1(c, expr_last_line(gen.ifs[-1]))
