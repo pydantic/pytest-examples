@@ -55,7 +55,7 @@ def ruff_check(
     stdout, stderr = p.communicate(example.source, timeout=10)
     if p.returncode == 1 and stdout:
 
-        def replace_offset(m: re.Match[str]):
+        def replace_offset(m: re.Match[str]) -> str:
             line_number = int(m.group(1))
             return f'{example.path}:{line_number + example.start_line}'
 

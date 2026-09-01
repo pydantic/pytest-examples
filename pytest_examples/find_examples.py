@@ -48,7 +48,7 @@ class CodeExample:
         end_index: int | None = None,
         prefix: str = '',
         indent: int = 0,
-    ):
+    ) -> CodeExample:
         """Create a `CodeExample`, mostly for testing."""
         if end_line is None:
             end_line = start_line + source.count('\n')
@@ -75,7 +75,7 @@ class CodeExample:
 
         This works on the format `py foo="bar" spam="with space"`.
         """
-        settings = {}
+        settings: dict[str, str] = {}
         for m in re.finditer(r'([^{\s]+?)=([\'"])(.+?)\2', self.prefix):
             settings[m.group(1)] = m.group(3)
         return settings
@@ -98,7 +98,7 @@ class CodeExample:
         """Whether the example is in a Python file."""
         return self.path.suffix == '.py'
 
-    def __str__(self):
+    def __str__(self) -> str:
         try:
             path = self.path.relative_to(Path.cwd())
         except ValueError:

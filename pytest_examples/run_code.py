@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from importlib.abc import Loader
 from pathlib import Path
 from textwrap import indent
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeAlias
 from unittest.mock import patch
 
 import pytest
@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 __all__ = 'run_code', 'InsertPrintStatements', 'IncludePrint'
 
 parent_frame_id = 4
-IncludePrint = Callable[[Path, inspect.FrameInfo, Sequence[Any]], bool]
+IncludePrint: TypeAlias = Callable[[Path, inspect.FrameInfo, Sequence[Any]], bool]
 
 
 def run_code(
@@ -102,13 +102,14 @@ class Arg:
     data: str
     is_str: bool = False
 
-    def __init__(self, v: Any):
+    def __init__(self, v: Any) -> None:
         if isinstance(v, str):
             self.data = v
             self.is_str = True
         elif isinstance(v, set):
             # NOTE! this is not recursive
-            ordered = ', '.join(repr(x) for x in sorted(v))
+            items: set[Any] = v
+            ordered = ', '.join(repr(x) for x in sorted(items))
             self.data = f'{{{ordered}}}'
         else:
             self.data = re.sub('0x[a-f0-9]{8,12}>', '0x0123456789ab>', str(v))
@@ -134,7 +135,7 @@ class PrintStatement:
     sep: str
     args: list[Arg]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.sep.join(map(str, self.args))
 
 
@@ -186,7 +187,7 @@ class InsertPrintStatements:
         enable: bool,
         print_callback: Callable[[str], str] | None,
         include_print: IncludePrint | None,
-    ):
+    ) -> None:
         self.file = python_path
         self.config = config
         self.print_func = MockPrintFunction(python_path, include_print) if enable else None
@@ -198,7 +199,7 @@ class InsertPrintStatements:
             self.patch = patch('builtins.print', side_effect=self.print_func)
             self.patch.start()
 
-    def __exit__(self, *args) -> None:
+    def __exit__(self, *args: Any) -> None:
         if self.patch is not None:
             self.patch.stop()
 
