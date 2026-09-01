@@ -139,12 +139,6 @@ class PrintStatement:
         return self.sep.join(map(str, self.args))
 
 
-def not_print(*args):
-    import sys
-
-    sys.stdout.write(' '.join(map(str, args)) + '\n')
-
-
 class MockPrintFunction:
     __slots__ = 'file', 'statements', 'include_print'
 
