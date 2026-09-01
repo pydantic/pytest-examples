@@ -92,6 +92,9 @@ exclude_lines = [
 ]
 
 [tool.pyright]
+# `requires-python` is the floor. Without this, pyright checks against whatever
+#  interpreter the job installed (3.12 in CI), so a 3.11-only annotation passes.
+pythonVersion = "3.10"
 #typeCheckingMode = "strict"
 reportUnnecessaryTypeIgnoreComment = true
 reportMissingTypeStubs = false
