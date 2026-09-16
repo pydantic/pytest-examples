@@ -15,7 +15,7 @@ def create_example_traceback(exc: Exception, module_path: str, example: CodeExam
 
     Frames outside the example are not included in the new traceback.
     """
-    frames = []
+    frames: list[tuple[FrameType, int, int]] = []
     tb = exc.__traceback__
     while tb is not None:
         frame = tb.tb_frame

@@ -1,6 +1,6 @@
 from __future__ import annotations as _annotations
 
-from collections.abc import Iterator
+from collections.abc import Generator
 from importlib.metadata import version
 from pathlib import Path
 
@@ -13,7 +13,7 @@ __version__ = version('pytest_examples')
 __all__ = 'find_examples', 'CodeExample', 'EvalExample'
 
 
-def pytest_addoption(parser) -> None:
+def pytest_addoption(parser: pytest.Parser) -> None:
     """Add options to the pytest command line."""
     group = parser.getgroup('examples')
     group.addoption(
@@ -35,7 +35,7 @@ summary: str | None = None
 
 
 @pytest.fixture(scope='session')
-def _examples_to_update(pytestconfig: pytest.Config) -> Iterator[list[CodeExample]]:
+def _examples_to_update(pytestconfig: pytest.Config) -> Generator[list[CodeExample]]:
     """Don't use this directly, it's just  used by."""
     global summary
 
@@ -50,7 +50,11 @@ def _examples_to_update(pytestconfig: pytest.Config) -> Iterator[list[CodeExampl
 
 
 @pytest.fixture(name='eval_example')
-def eval_example(tmp_path: Path, request: pytest.FixtureRequest, _examples_to_update) -> Iterator[EvalExample]:
+def eval_example(
+    tmp_path: Path,
+    request: pytest.FixtureRequest,
+    _examples_to_update: list[CodeExample],
+) -> Generator[EvalExample]:
     """Fixture to return a `EvalExample` instance for running and linting examples."""
     eval_ex = EvalExample(tmp_path=tmp_path, pytest_request=request)
     yield eval_ex

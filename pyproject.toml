@@ -91,10 +91,15 @@ exclude_lines = [
 ]
 
 [tool.pyright]
+pythonVersion = "3.10"
 #typeCheckingMode = "strict"
 reportUnnecessaryTypeIgnoreComment = true
 reportMissingTypeStubs = false
 reportUnusedCallResult = false
+reportMissingParameterType = "error"
+reportUnknownParameterType = "error"
+reportUnknownVariableType = "error"
+reportUnknownArgumentType = "error"
 reportExplicitAny = false
 reportAny = false
 include = ["pytest_examples"]
