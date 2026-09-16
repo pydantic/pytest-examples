@@ -56,10 +56,12 @@ def ruff_check(
     if p.returncode == 1 and stdout:
 
         def replace_offset(m: re.Match[str]):
-            line_number = int(m.group(1))
-            return f'{example.path}:{line_number + example.start_line}'
+            line_number = int(m.group(2))
+            return f'{m.group(1)}--> {example.path}:{line_number + example.start_line}'
 
-        output = re.sub(r'^-:(\d+)', replace_offset, stdout, flags=re.M)
+        # ruff >=0.12.9 renders the location on a separate ` --> file:line:col` line, indented to
+        # align with the source gutter, so the leading whitespace widens for multi-digit line numbers.
+        output = re.sub(r'^( *)--> -:(\d+)', replace_offset, stdout, flags=re.M)
         raise FormatError(f'ruff failed:\n{indent(output, "  ")}')
     elif p.returncode != 0:
         raise RuntimeError(f'Error running ruff, return code {p.returncode}:\n{stderr or stdout}')
