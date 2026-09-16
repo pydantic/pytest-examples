@@ -2,7 +2,6 @@ from __future__ import annotations as _annotations
 
 import re
 import shlex
-from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 from textwrap import dedent
@@ -106,15 +105,16 @@ class CodeExample:
         return f'{path}:{self.start_line}-{self.end_line}'
 
 
-def find_examples(*paths: str | Path, skip: bool = False) -> Iterable[CodeExample]:
+def find_examples(*paths: str | Path, skip: bool = False) -> list[CodeExample]:
     """Find Python code examples in markdown files and python file docstrings.
 
     :param paths: Directories or files to search for examples in.
     :param skip: Whether to exit early and not search for examples, useful when running on windows where search fails.
     :return: A generator of `CodeExample` objects.
     """
+    examples = []
     if skip:
-        return
+        return []
 
     for s in paths:
         path = Path(s)
@@ -133,17 +133,20 @@ def find_examples(*paths: str | Path, skip: bool = False) -> Iterable[CodeExampl
                     start_line = code[: m_docstring.start()].count('\n')
                     docstring = m_docstring.group(3)
                     index_offset = m_docstring.start() + len(m_docstring.group(1)) + len(m_docstring.group(2))
-                    yield from _extract_code_chunks(
+                    examples += _extract_code_chunks(
                         path, docstring, group, line_offset=start_line, index_offset=index_offset
                     )
             elif path.suffix == '.md':
                 code = path.read_text('utf-8')
-                yield from _extract_code_chunks(path, code, group)
+                examples += _extract_code_chunks(path, code, group)
+
+    return examples
 
 
 def _extract_code_chunks(
     path: Path, text: str, group: UUID, *, line_offset: int = 0, index_offset: int = 0
-) -> Iterable[CodeExample]:
+) -> list[CodeExample]:
+    examples = []
     for m_code in re.finditer(r'(^ *```)( *)(.*?)\n(.+?)\1', text, flags=re.M | re.S):
         group1, group2, prefix, source = m_code.groups()
         prefix = prefix.lower()
@@ -152,7 +155,7 @@ def _extract_code_chunks(
             source_dedent, indent = remove_indent(source)
             # 1 for the newline
             start_index = index_offset + m_code.start() + len(group1) + len(group2) + len(prefix) + 1
-            yield CodeExample(
+            ex = CodeExample(
                 source=source_dedent,
                 path=path,
                 start_line=start_line,
@@ -163,6 +166,8 @@ def _extract_code_chunks(
                 indent=indent,
                 group=group,
             )
+            examples.append(ex)
+    return examples
 
 
 def remove_indent(text: str) -> tuple[str, int]:

@@ -5,6 +5,7 @@ import pytest
 
 
 def find_cases():
+    cases = []
     root_dir = Path(__file__).parent / 'cases_update'
     for f in root_dir.iterdir():
         if not f.is_file():
@@ -30,7 +31,8 @@ def find_cases():
                 m = re.search(r'^```.*?^(.+?)^```', test, flags=re.M | re.S)
                 if m:
                     test = m.group(1)
-            yield pytest.param(f, example, output, test, test_count, id=f.name)
+            cases.append(pytest.param(f, example, output, test, test_count, id=f.name))
+    return cases
 
 
 @pytest.mark.parametrize('file_path,example,output,test_code,test_count', find_cases())
