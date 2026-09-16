@@ -27,7 +27,7 @@ def ruff_format(
     *,
     ignore_errors: bool = False,
 ) -> str:
-    args = ('--fix',)
+    args: tuple[str, ...] = ('--fix',)
     if ignore_errors:
         args += ('--exit-zero',)
     try:

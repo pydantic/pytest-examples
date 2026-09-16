@@ -38,7 +38,7 @@ class EvalExample:
         line_length: int = DEFAULT_LINE_LENGTH,
         quotes: Literal['single', 'double', 'either'] = 'either',
         magic_trailing_comma: bool = True,
-        target_version: Literal['py37', 'py38', 'py39', 'py310', 'py310'] = 'py37',
+        target_version: str | None = 'py37',
         upgrade: bool = False,
         isort: bool = False,
         ruff_line_length: int | None = None,
@@ -51,7 +51,7 @@ class EvalExample:
             line_length: The line length to use when wrapping print statements, defaults to 88.
             quotes: The quote to use, defaults to "either".
             magic_trailing_comma: If True, add a trailing comma to magic methods, defaults to True.
-            target_version: The target version to use when upgrading code, defaults to "py37".
+            target_version: The target version to use when checking and formatting code, defaults to "py37".
             upgrade: If True, upgrade the code to the target version, defaults to False.
             isort: If True, run ruff's isort extension on the code, defaults to False.
             ruff_line_length: In general, we disable line-length checks in ruff, to let black take care of them.
