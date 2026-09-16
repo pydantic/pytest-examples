@@ -23,10 +23,10 @@ __all__ = ('EvalExample',)
 class EvalExample:
     """Class to run and lint examples."""
 
-    def __init__(self, *, tmp_path: Path, pytest_request: pytest.FixtureRequest):
+    def __init__(self, *, tmp_path: Path, pytest_request: pytest.FixtureRequest) -> None:
         self.tmp_path = tmp_path
         self._pytest_config = pytest_request.config
-        self._test_id = pytest_request.node.nodeid
+        self._test_id: str = pytest_request.node.nodeid
         self.to_update: list[CodeExample] = []
         self.config: ExamplesConfig = ExamplesConfig()
         self.print_callback: Callable[[str], str] | None = None
@@ -44,7 +44,7 @@ class EvalExample:
         ruff_line_length: int | None = None,
         ruff_select: list[str] | None = None,
         ruff_ignore: list[str] | None = None,
-    ):
+    ) -> None:
         """Set the config for lints.
 
         Args:

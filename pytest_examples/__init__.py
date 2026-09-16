@@ -13,7 +13,7 @@ __version__ = version('pytest_examples')
 __all__ = 'find_examples', 'CodeExample', 'EvalExample'
 
 
-def pytest_addoption(parser) -> None:
+def pytest_addoption(parser: pytest.Parser) -> None:
     """Add options to the pytest command line."""
     group = parser.getgroup('examples')
     group.addoption(
@@ -50,7 +50,11 @@ def _examples_to_update(pytestconfig: pytest.Config) -> Iterator[list[CodeExampl
 
 
 @pytest.fixture(name='eval_example')
-def eval_example(tmp_path: Path, request: pytest.FixtureRequest, _examples_to_update) -> Iterator[EvalExample]:
+def eval_example(
+    tmp_path: Path,
+    request: pytest.FixtureRequest,
+    _examples_to_update: list[CodeExample],
+) -> Iterator[EvalExample]:
     """Fixture to return a `EvalExample` instance for running and linting examples."""
     eval_ex = EvalExample(tmp_path=tmp_path, pytest_request=request)
     yield eval_ex

@@ -30,7 +30,7 @@ class ExamplesConfig:
     white_space_dot: bool = False
     """If True, replace spaces with `·` in example diffs."""
 
-    def black_mode(self):
+    def black_mode(self) -> BlackMode:
         return BlackMode(
             line_length=self.line_length,
             target_versions={BlackTargetVersion[self.target_version.upper()]} if self.target_version else set(),
