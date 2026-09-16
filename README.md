@@ -83,7 +83,7 @@ def test_docstrings(example: CodeExample, eval_example: EvalExample):
 
 ### Updating files
 
-As well as checking linting and print statements, are correct, we can also update files.
+As well as checking if linting and print statements are correct, we can also update files.
 
 This requires the `--update-examples` flags **AND** use of the `format()` and `run_print_update()` methods.
 
