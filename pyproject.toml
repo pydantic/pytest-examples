@@ -52,7 +52,6 @@ xfail_strict = true
 
 [tool.ruff]
 line-length = 120
-target-version = "py39"
 include = ["pytest_examples/**/*.py", "tests/**/*.py", "examples/**/*.py"]
 exclude = ["tests/cases_update/*.py"]
 
