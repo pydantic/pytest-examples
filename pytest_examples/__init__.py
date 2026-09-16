@@ -1,6 +1,6 @@
 from __future__ import annotations as _annotations
 
-from collections.abc import Iterator
+from collections.abc import Generator
 from importlib.metadata import version
 from pathlib import Path
 
@@ -35,7 +35,7 @@ summary: str | None = None
 
 
 @pytest.fixture(scope='session')
-def _examples_to_update(pytestconfig: pytest.Config) -> Iterator[list[CodeExample]]:
+def _examples_to_update(pytestconfig: pytest.Config) -> Generator[list[CodeExample]]:
     """Don't use this directly, it's just  used by."""
     global summary
 
@@ -54,7 +54,7 @@ def eval_example(
     tmp_path: Path,
     request: pytest.FixtureRequest,
     _examples_to_update: list[CodeExample],
-) -> Iterator[EvalExample]:
+) -> Generator[EvalExample]:
     """Fixture to return a `EvalExample` instance for running and linting examples."""
     eval_ex = EvalExample(tmp_path=tmp_path, pytest_request=request)
     yield eval_ex
