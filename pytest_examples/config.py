@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from typing import Literal
 
 
-__all__ = 'ExamplesConfig', 'DEFAULT_LINE_LENGTH'
+__all__ = 'DEFAULT_LINE_LENGTH', 'ExamplesConfig'
 
 
 @dataclass

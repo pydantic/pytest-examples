@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from .config import ExamplesConfig
     from .find_examples import CodeExample
 
-__all__ = 'run_code', 'InsertPrintStatements', 'IncludePrint'
+__all__ = 'IncludePrint', 'InsertPrintStatements', 'run_code'
 
 parent_frame_id = 4
 IncludePrint: TypeAlias = Callable[[Path, inspect.FrameInfo, Sequence[Any]], bool]
@@ -90,7 +90,7 @@ def run_code(
         if example_tb:
             raise exc.with_traceback(example_tb)
         else:
-            raise exc
+            raise
 
     return insert_print, {k: v for k, v in module.__dict__.items() if not k.startswith(('__', '@'))}
 
@@ -140,7 +140,7 @@ class PrintStatement:
 
 
 class MockPrintFunction:
-    __slots__ = 'file', 'statements', 'include_print'
+    __slots__ = 'file', 'include_print', 'statements'
 
     def __init__(self, file: Path, include_print: IncludePrint | None) -> None:
         self.file = file
@@ -193,7 +193,7 @@ class InsertPrintStatements:
             self.patch = patch('builtins.print', side_effect=self.print_func)
             self.patch.start()
 
-    def __exit__(self, *args: Any) -> None:
+    def __exit__(self, *args: object) -> None:
         if self.patch is not None:
             self.patch.stop()
 
@@ -324,8 +324,8 @@ def find_print(node: Any, line: int) -> tuple[int, int] | None:
             if found_loc is not None:
                 return found_loc
         elif isinstance(node, ast.Try):
-            for node in node.handlers:
-                found_loc = find_print(node, line)
+            for node_handler in node.handlers:
+                found_loc = find_print(node_handler, line)
                 if found_loc is not None:
                     return found_loc
     elif isinstance(node, ast.Expr):

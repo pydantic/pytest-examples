@@ -14,7 +14,7 @@ from .config import ExamplesConfig
 if TYPE_CHECKING:
     from .find_examples import CodeExample
 
-__all__ = 'ruff_check', 'ruff_format', 'black_check', 'black_format', 'code_diff', 'FormatError'
+__all__ = 'FormatError', 'black_check', 'black_format', 'code_diff', 'ruff_check', 'ruff_format'
 
 
 class FormatError(ValueError):
@@ -39,7 +39,7 @@ def ruff_format(
         except FormatError as e2:
             raise e2 from None
         else:
-            raise Exception('ruff failed in Fix mode but not in Check mode, please report this')
+            raise Exception('ruff failed in Fix mode but not in Check mode, please report this')  # noqa: TRY002
 
 
 def ruff_check(
@@ -60,7 +60,7 @@ def ruff_check(
             line_number = int(m.group(1))
             return f'{example.path}:{line_number + example.start_line}'
 
-        output = re.sub(r'^-:(\d+)', replace_offset, stdout, flags=re.M)
+        output = re.sub(r'^-:(\d+)', replace_offset, stdout, flags=re.MULTILINE)
         raise FormatError(f'ruff failed:\n{indent(output, "  ")}')
     elif p.returncode != 0:
         raise RuntimeError(f'Error running ruff, return code {p.returncode}:\n{stderr or stdout}')
@@ -70,10 +70,10 @@ def ruff_check(
 
 def black_format(source: str, config: ExamplesConfig, *, remove_double_blank: bool = False) -> str:
     # hack to avoid black complaining about our print output format
-    before_black = re.sub(r'^( *#)> ', r'\1 > ', source, flags=re.M)
+    before_black = re.sub(r'^( *#)> ', r'\1 > ', source, flags=re.MULTILINE)
     after_black = black_format_str(before_black, mode=config.black_mode())
     # then revert it back
-    after_black = re.sub(r'^( *#) > ', r'\1> ', after_black, flags=re.M)
+    after_black = re.sub(r'^( *#) > ', r'\1> ', after_black, flags=re.MULTILINE)
     if remove_double_blank:
         after_black = re.sub(r'\n{3}', '\n\n', after_black)
     return after_black
@@ -93,7 +93,7 @@ def code_diff(example: CodeExample, after: str, config: ExamplesConfig) -> str:
         offset = re.sub(r'\d+', lambda m: str(int(m.group(0)) + example.start_line), match.group(2))
         return f'{match.group(1)}{offset}{match.group(3)}'
 
-    return re.sub(r'^(@@\s*)(.*)(\s*@@)$', replace_at_line, diff, flags=re.M)
+    return re.sub(r'^(@@\s*)(.*)(\s*@@)$', replace_at_line, diff, flags=re.MULTILINE)
 
 
 def sub_space(text: str, config: ExamplesConfig) -> str:

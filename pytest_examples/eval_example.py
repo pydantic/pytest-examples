@@ -38,7 +38,7 @@ class EvalExample:
         line_length: int = DEFAULT_LINE_LENGTH,
         quotes: Literal['single', 'double', 'either'] = 'either',
         magic_trailing_comma: bool = True,
-        target_version: Literal['py37', 'py38', 'py39', 'py310', 'py310'] = 'py37',
+        target_version: Literal['py37', 'py38', 'py39', 'py310'] = 'py37',
         upgrade: bool = False,
         isort: bool = False,
         ruff_line_length: int | None = None,
@@ -146,7 +146,7 @@ class EvalExample:
     def _run(
         self,
         example: CodeExample,
-        insert_print_statements: Literal['check', 'update', None],
+        insert_print_statements: Literal['check', 'update'] | None,
         module_globals: dict[str, Any] | None,
         rewrite_assertions: bool,
         call: str | None,
@@ -159,9 +159,7 @@ class EvalExample:
         else:
             loader = None
 
-        if insert_print_statements == 'check':
-            enable_print_mock = True
-        elif insert_print_statements == 'update':
+        if insert_print_statements == 'check' or insert_print_statements == 'update':
             enable_print_mock = True
         else:
             enable_print_mock = False
