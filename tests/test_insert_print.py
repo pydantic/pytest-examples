@@ -1,6 +1,7 @@
 from __future__ import annotations as _annotations
 
 import sys
+from pathlib import Path
 
 import pytest
 from _pytest.outcomes import Failed
@@ -476,3 +477,54 @@ other.does_print()
     other_file.write_text(('\n' * 30) + other_code)
 
     eval_example.run_print_check(example, call='main')
+
+
+@pytest.mark.parametrize(
+    'call_line',
+    [
+        'builtins.print(long_a, long_b)',
+        'p(long_a, long_b)',
+        'obj.print(long_a, long_b)',
+    ],
+    ids=['builtins.print', 'aliased print', 'method named print'],
+)
+def test_print_location_keeps_indent_when_the_call_is_not_a_bare_name(call_line):
+    """find_print only matches a literal `print(...)` -- a Call whose func is a Name.
+
+    Output still reaches the mock through `builtins.print`, a local alias, or a method
+    that prints internally. Those fell back to column 0, so a multi-line block was
+    written hard against the left margin even inside an indented function body,
+    producing a file that no longer round-trips (issue #59).
+    """
+    source = f"""import builtins
+
+p = print
+long_a = 'a' * 30
+long_b = 'b' * 30
+
+
+def main():
+    {call_line}
+"""
+    example = CodeExample.create(source, path=Path('test.md'))
+
+    line, col = find_print_location(example, 9)
+
+    assert col == 4, 'the block would be inserted at the left margin, not in the function body'
+
+
+def test_print_location_still_uses_the_ast_for_a_bare_print():
+    """The control: a call the AST path recognises must keep taking that path."""
+    source = """def main():
+    print('a' * 30, 'b' * 30)
+"""
+    example = CodeExample.create(source, path=Path('test.md'))
+
+    assert find_print_location(example, 2) == (2, 4)
+
+
+def test_print_location_tolerates_an_out_of_range_line():
+    """line_no is documented as possibly approximate, so the lookup must not raise."""
+    example = CodeExample.create('print(1)' + chr(10), path=Path('test.md'))
+
+    assert find_print_location(example, 999) == (999, 0)
