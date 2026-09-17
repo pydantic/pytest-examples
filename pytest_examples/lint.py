@@ -49,7 +49,8 @@ def ruff_check(
     extra_ruff_args: tuple[str, ...] = (),
 ) -> str:
     ruff = find_ruff_bin()
-    args = ruff, 'check', '-', *config.ruff_config(), *extra_ruff_args
+    # ruff's default output format is `full` since 0.9, `concise` is what the offsets below assume
+    args = ruff, 'check', '-', '--output-format=concise', *config.ruff_config(), *extra_ruff_args
 
     p = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, encoding='utf-8')
     stdout, stderr = p.communicate(example.source, timeout=10)
