@@ -1,6 +1,9 @@
+from subprocess import Popen, TimeoutExpired
+from typing import Any
+
 import pytest
 
-from pytest_examples import CodeExample
+from pytest_examples import CodeExample, lint
 from pytest_examples.config import ExamplesConfig
 from pytest_examples.lint import FormatError, black_check, ruff_check
 
@@ -30,6 +33,34 @@ def test_ruff_offset():
     example = CodeExample.create(code, start_line=10)
     with pytest.raises(FormatError, match='testing.md:11:7: F821 Undefined name'):
         ruff_check(example, ExamplesConfig())
+
+
+def test_ruff_timeout_kills_the_process(monkeypatch: pytest.MonkeyPatch) -> None:
+    spawned: list[Popen[str]] = []
+
+    class TimingOutPopen(Popen[str]):
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            super().__init__(*args, **kwargs)
+            spawned.append(self)
+
+        def communicate(self, input: str | None = None, timeout: float | None = None) -> tuple[str, str]:
+            # `ruff_check` passes a timeout, the cleanup it runs afterwards does not
+            if timeout is not None:
+                raise TimeoutExpired(self.args, timeout)
+            return super().communicate()
+
+    monkeypatch.setattr(lint, 'Popen', TimingOutPopen)
+
+    example = CodeExample.create('x = 1\n')
+    with pytest.raises(TimeoutExpired):
+        ruff_check(example, ExamplesConfig())
+
+    ruff_process = spawned[0]
+
+    assert ruff_process.poll() is not None
+    assert ruff_process.stdin.closed
+    assert ruff_process.stdout.closed
+    assert ruff_process.stderr.closed
 
 
 def test_black_line_length():
