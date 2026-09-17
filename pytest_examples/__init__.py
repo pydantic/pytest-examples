@@ -10,7 +10,7 @@ from .eval_example import EvalExample
 from .find_examples import CodeExample, find_examples
 
 __version__ = version('pytest_examples')
-__all__ = 'find_examples', 'CodeExample', 'EvalExample'
+__all__ = 'CodeExample', 'EvalExample', 'find_examples'
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:

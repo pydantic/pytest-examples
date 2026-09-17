@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from typing import Literal
 
 
-__all__ = 'ExamplesConfig', 'DEFAULT_LINE_LENGTH'
+__all__ = 'DEFAULT_LINE_LENGTH', 'ExamplesConfig'
 
 
 @dataclass
@@ -75,9 +75,10 @@ class ExamplesConfig:
         if self.ruff_ignore:
             ignore.extend(self.ruff_ignore)
 
-        if select:
-            # use extend to not disable default select
-            args.append(f'--extend-select={",".join(select)}')
+        # ruff 0.16 changed its default rules: it enabled several hundred from other linters, and
+        # dropped 18 pycodestyle and pyflakes ones (`E711` and `F403` among them). Select the pre-0.16
+        # default explicitly so examples are linted with the same rules whatever ruff version is installed.
+        args.append(f'--select={",".join(["E4", "E7", "E9", "F", *select])}')
         if ignore:
             args.append(f'--ignore={",".join(ignore)}')
 

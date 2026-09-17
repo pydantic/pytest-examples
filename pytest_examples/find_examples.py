@@ -129,7 +129,7 @@ def find_examples(*paths: str | Path, skip: bool = False) -> list[CodeExample]:
             group = uuid4()
             if path.suffix == '.py':
                 code = path.read_text('utf-8')
-                for m_docstring in re.finditer(r'(^ *)(r?""")(.+?)"""', code, flags=re.M | re.S):
+                for m_docstring in re.finditer(r'(^ *)(r?""")(.+?)"""', code, flags=re.MULTILINE | re.DOTALL):
                     start_line = code[: m_docstring.start()].count('\n')
                     docstring = m_docstring.group(3)
                     index_offset = m_docstring.start() + len(m_docstring.group(1)) + len(m_docstring.group(2))
@@ -147,7 +147,7 @@ def _extract_code_chunks(
     path: Path, text: str, group: UUID, *, line_offset: int = 0, index_offset: int = 0
 ) -> list[CodeExample]:
     examples: list[CodeExample] = []
-    for m_code in re.finditer(r'(^ *```)( *)(.*?)\n(.+?)\1', text, flags=re.M | re.S):
+    for m_code in re.finditer(r'(^ *```)( *)(.*?)\n(.+?)\1', text, flags=re.MULTILINE | re.DOTALL):
         group1, group2, prefix, source = m_code.groups()
         prefix = prefix.lower()
         if prefix.startswith(('py', '{.py')):
