@@ -129,3 +129,5 @@ ruff-ignore = ["D", "T201"]
 
 Arguments passed to `set_config()` override the config file. An unknown key, or an invalid value, stops the
 test run with an error.
+`target-version` must be supported by both the installed black and ruff; an unsupported one fails when an
+example is linted.

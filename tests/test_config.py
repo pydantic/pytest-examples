@@ -69,6 +69,7 @@ def test_unknown_key(tmp_path: Path, key: str):
         pytest.param("ruff-line-length = '30'", id='str-for-optional-int'),
         pytest.param("ruff-ignore = 'D'", id='str-for-list'),
         pytest.param('ruff-ignore = [1]', id='int-in-list'),
+        pytest.param('target-version = 311', id='int-for-target'),
     ],
 )
 def test_wrong_type(tmp_path: Path, line: str):
@@ -82,7 +83,6 @@ def test_wrong_type(tmp_path: Path, line: str):
     'line',
     [
         pytest.param("quotes = 'bogus'", id='quotes'),
-        pytest.param("target-version = 'py399'", id='target-version'),
     ],
 )
 def test_value_not_allowed(tmp_path: Path, line: str):
@@ -90,6 +90,12 @@ def test_value_not_allowed(tmp_path: Path, line: str):
 
     with pytest.raises(pytest.UsageError, match=r'in \[tool\.pytest-examples\] must be one of: '):
         load_pyproject_config(tmp_path)
+
+
+def test_target_version_reaches_the_tools(tmp_path: Path):
+    (tmp_path / 'pyproject.toml').write_text("[tool.pytest-examples]\ntarget-version = 'py399'\n")
+
+    assert load_pyproject_config(tmp_path).target_version == 'py399'
 
 
 @pytest.mark.parametrize(

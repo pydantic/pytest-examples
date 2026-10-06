@@ -25,7 +25,7 @@ class ExamplesConfig:
     line_length: int = DEFAULT_LINE_LENGTH
     quotes: Literal['single', 'double', 'either'] = 'either'
     magic_trailing_comma: bool = True
-    target_version: Literal['py37', 'py38', 'py39', 'py310', 'py311'] = 'py37'
+    target_version: Literal['py37', 'py38', 'py39', 'py310', 'py311', 'py312', 'py313', 'py314', 'py315'] = 'py37'
     upgrade: bool = False
     isort: bool = False
     ruff_line_length: int | None = None
@@ -103,7 +103,7 @@ class ConfigKwargs(TypedDict, total=False):
 
     # black and ruff
     quotes: Literal['single', 'double', 'either']
-    target_version: Literal['py37', 'py38', 'py39', 'py310', 'py311']
+    target_version: Literal['py37', 'py38', 'py39', 'py310', 'py311', 'py312', 'py313', 'py314', 'py315']
     # black, and the wrapping of `#>` print output
     line_length: int
     magic_trailing_comma: bool
@@ -135,7 +135,9 @@ def load_pyproject_config(rootdir: Path) -> ExamplesConfig:
             keys = ', '.join(name.replace('_', '-') for name in hints)
             raise pytest.UsageError(f'{path}: unknown key {key!r} in [tool.pytest-examples], expected one of: {keys}')
 
-        expected = _mismatch(value, hint=hints[field])
+        # which targets work depends on the installed black and ruff, and they reject an unsupported one
+        # when an example is linted, so the `Literal` is only a typing aid here
+        expected = _mismatch(value, hint=str if field == 'target_version' else hints[field])
         if expected is not None:
             raise pytest.UsageError(f'{path}: {key!r} in [tool.pytest-examples] must be {expected}, got {value!r}')
 
