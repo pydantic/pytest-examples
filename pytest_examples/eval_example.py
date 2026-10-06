@@ -1,5 +1,7 @@
 from __future__ import annotations as _annotations
 
+import copy
+import dataclasses
 from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -8,14 +10,17 @@ import pytest
 from _pytest.assertion.rewrite import AssertionRewritingHook
 from _pytest.outcomes import Failed as PytestFailed
 
-from .config import DEFAULT_LINE_LENGTH, ExamplesConfig
+from .config import PYPROJECT_CONFIG_KEY, ConfigKwargs, ExamplesConfig
 from .lint import FormatError, black_check, black_format, ruff_check, ruff_format
 from .run_code import IncludePrint, InsertPrintStatements, run_code
 
 if TYPE_CHECKING:
     from typing import Literal
 
+    from typing_extensions import Unpack
+
     from .find_examples import CodeExample
+
 
 __all__ = ('EvalExample',)
 
@@ -28,24 +33,17 @@ class EvalExample:
         self._pytest_config = pytest_request.config
         self._test_id: str = pytest_request.node.nodeid
         self.to_update: list[CodeExample] = []
-        self.config: ExamplesConfig = ExamplesConfig()
+        # no stash entry when the plugin is off (`-p no:examples`) and a user fixture builds this class
+        self._pyproject_config = pytest_request.config.stash.get(PYPROJECT_CONFIG_KEY, ExamplesConfig())
+        self.config: ExamplesConfig = copy.deepcopy(self._pyproject_config)
         self.print_callback: Callable[[str], str] | None = None
         self.include_print: IncludePrint | None = None
 
-    def set_config(
-        self,
-        *,
-        line_length: int = DEFAULT_LINE_LENGTH,
-        quotes: Literal['single', 'double', 'either'] = 'either',
-        magic_trailing_comma: bool = True,
-        target_version: Literal['py37', 'py38', 'py39', 'py310'] = 'py37',
-        upgrade: bool = False,
-        isort: bool = False,
-        ruff_line_length: int | None = None,
-        ruff_select: list[str] | None = None,
-        ruff_ignore: list[str] | None = None,
-    ) -> None:
+    def set_config(self, **kwargs: Unpack[ConfigKwargs]) -> None:
         """Set the config for lints.
+
+        Every argument not passed keeps its value from `[tool.pytest-examples]` in `pyproject.toml`,
+        or the default below when the table does not set it.
 
         Args:
             line_length: The line length to use when wrapping print statements, defaults to 88.
@@ -58,17 +56,12 @@ class EvalExample:
             ruff_select: Ruff rules to select
             ruff_ignore: Ruff rules to ignore
         """
-        self.config = ExamplesConfig(
-            line_length=line_length,
-            quotes=quotes,
-            magic_trailing_comma=magic_trailing_comma,
-            target_version=target_version,
-            upgrade=upgrade,
-            isort=isort,
-            ruff_line_length=ruff_line_length,
-            ruff_select=ruff_select,
-            ruff_ignore=ruff_ignore,
-        )
+        # `dataclasses.replace` takes every `ExamplesConfig` field, `white_space_dot` included
+        unknown = sorted(kwargs.keys() - ConfigKwargs.__optional_keys__)
+        if unknown:
+            raise TypeError(f'EvalExample.set_config() got an unexpected keyword argument {unknown[0]!r}')
+
+        self.config = dataclasses.replace(copy.deepcopy(self._pyproject_config), **kwargs)
 
     @property
     def update_examples(self) -> bool:

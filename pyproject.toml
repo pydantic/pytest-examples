@@ -33,7 +33,12 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 requires-python = ">=3.10"
-dependencies = ["pytest>=7", "black>=23", "ruff>=0.5.0"]
+dependencies = [
+    "pytest>=7",
+    "black>=23",
+    "ruff>=0.5.0",
+    "tomli>=1; python_version < '3.11'",
+]
 
 [project.entry-points.pytest11]
 examples = "pytest_examples"
@@ -42,8 +47,16 @@ examples = "pytest_examples"
 repository = "https://github.com/pydantic/pytest-examples"
 
 [dependency-groups]
-dev = ["coverage[toml]>=7.6.1", "pytest-pretty>=1.2.0"]
-lint = ["pre-commit>=3.5.0", "pyright>=1.1.389", "ruff>=0.7.4"]
+dev = [
+    "coverage[toml]>=7.6.1",
+    "pytest-pretty>=1.2.0",
+]
+lint = [
+    "pre-commit>=3.5.0",
+    "pyright>=1.1.389",
+    "ruff>=0.7.4",
+    "tomli>=1",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "example"]

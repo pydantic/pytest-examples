@@ -104,3 +104,30 @@ def test_readme(example: CodeExample, eval_example: EvalExample):
         eval_example.lint(example)
         eval_example.run_print_check(example)
 ```
+
+### Configuration
+
+The options of `eval_example.set_config()` can also be set once for the whole project, in a
+`[tool.pytest-examples]` table of the `pyproject.toml` in the pytest rootdir. Keys are the
+`set_config()` argument names in kebab-case, and every key is optional:
+
+```toml
+[tool.pytest-examples]
+# black and ruff
+quotes = "single"
+target-version = "py310"
+# black, and the wrapping of `#>` print output
+line-length = 100
+magic-trailing-comma = true
+# ruff
+upgrade = true
+isort = true
+ruff-line-length = 100
+ruff-select = ["B"]
+ruff-ignore = ["D", "T201"]
+```
+
+Arguments passed to `set_config()` override the config file. An unknown key, or an invalid value, stops the
+test run with an error.
+`target-version` must be supported by both the installed black and ruff; an unsupported one fails when an
+example is linted.
