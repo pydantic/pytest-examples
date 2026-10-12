@@ -309,6 +309,7 @@ dependencies = [
     { name = "black" },
     { name = "pytest" },
     { name = "ruff" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
 ]
 
 [package.dev-dependencies]
@@ -320,6 +321,7 @@ lint = [
     { name = "pre-commit" },
     { name = "pyright" },
     { name = "ruff" },
+    { name = "tomli" },
 ]
 
 [package.metadata]
@@ -327,6 +329,7 @@ requires-dist = [
     { name = "black", specifier = ">=23" },
     { name = "pytest", specifier = ">=7" },
     { name = "ruff", specifier = ">=0.5.0" },
+    { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=1" },
 ]
 
 [package.metadata.requires-dev]
@@ -338,6 +341,7 @@ lint = [
     { name = "pre-commit", specifier = ">=3.5.0" },
     { name = "pyright", specifier = ">=1.1.389" },
     { name = "ruff", specifier = ">=0.7.4" },
+    { name = "tomli", specifier = ">=1" },
 ]
 
 [[package]]

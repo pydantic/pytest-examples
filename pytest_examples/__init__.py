@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from .config import PYPROJECT_CONFIG_KEY, load_pyproject_config
 from .eval_example import EvalExample
 from .find_examples import CodeExample, find_examples
 
@@ -29,6 +30,11 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         action='store_true',
         help='Disable the summary of updated examples at the end of the test run.',
     )
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    """Read `[tool.pytest-examples]` once, so a bad key stops the run before any test."""
+    config.stash[PYPROJECT_CONFIG_KEY] = load_pyproject_config(config.rootpath)
 
 
 summary: str | None = None
