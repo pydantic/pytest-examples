@@ -1,4 +1,6 @@
 import re
+import sys
+from types import ModuleType
 
 import pytest
 
@@ -387,3 +389,26 @@ def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
 
     result = pytester.runpytest('-p', 'no:pretty', '-v')
     result.assert_outcomes(passed=1)
+
+
+@pytest.mark.parametrize('present', [False, True])
+@pytest.mark.parametrize('raises', [False, True])
+def test_run_restores_main_module(eval_example, monkeypatch, present, raises):
+    previous = ModuleType('__main__')
+    if present:
+        monkeypatch.setitem(sys.modules, '__main__', previous)
+    else:
+        monkeypatch.delitem(sys.modules, '__main__', raising=False)
+    source = 'import sys\nassert sys.modules[__name__].__dict__ is globals()\n'
+    if raises:
+        source += "raise ValueError('example failure')\n"
+    example = CodeExample.create(source)
+    if raises:
+        with pytest.raises(ValueError, match='example failure'):
+            eval_example.run(example)
+    else:
+        eval_example.run(example)
+    if present:
+        assert sys.modules['__main__'] is previous
+    else:
+        assert '__main__' not in sys.modules

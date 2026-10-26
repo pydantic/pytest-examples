@@ -72,6 +72,7 @@ def run_code(
     if module_globals:
         module.__dict__.update(module_globals)
 
+    previous_module = {spec.name: sys.modules[spec.name]} if spec.name in sys.modules else {}
     try:
         with insert_print:
             sys.modules[spec.name] = module
@@ -91,6 +92,9 @@ def run_code(
             raise exc.with_traceback(example_tb)
         else:
             raise
+    finally:
+        sys.modules.pop(spec.name, None)
+        sys.modules.update(previous_module)
 
     return insert_print, {k: v for k, v in module.__dict__.items() if not k.startswith(('__', '@'))}
 
