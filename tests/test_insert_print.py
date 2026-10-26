@@ -476,3 +476,14 @@ other.does_print()
     other_file.write_text(('\n' * 30) + other_code)
 
     eval_example.run_print_check(example, call='main')
+
+
+@pytest.mark.parametrize('address', ['0x12345678', '0x123456789abc', '0x0000020D61261B20'])
+def test_print_object_address_normalization(address):
+    from pytest_examples.run_code import Arg
+
+    class Example:
+        def __str__(self):
+            return f'<Example object at {address}>'
+
+    assert str(Arg(Example())) == '<Example object at 0x0123456789ab>'

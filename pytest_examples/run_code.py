@@ -112,7 +112,7 @@ class Arg:
             ordered = ', '.join(repr(x) for x in sorted(items))
             self.data = f'{{{ordered}}}'
         else:
-            self.data = re.sub('0x[a-f0-9]{8,12}>', '0x0123456789ab>', str(v))
+            self.data = re.sub('0x[a-fA-F0-9]+>', '0x0123456789ab>', str(v))
 
     def __str__(self) -> str:
         return self.data
