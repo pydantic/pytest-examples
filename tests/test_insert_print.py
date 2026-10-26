@@ -476,3 +476,13 @@ other.does_print()
     other_file.write_text(('\n' * 30) + other_code)
 
     eval_example.run_print_check(example, call='main')
+
+
+@pytest.mark.parametrize('values,expected', [(set(), 'set()'), ({1, 'a'}, "{'a', 1}")])
+def test_print_set_output(values, expected):
+    from pytest_examples.run_code import Arg
+
+    rendered = str(Arg(values))
+    assert rendered == expected
+    assert eval(rendered) == values
+    assert isinstance(eval(rendered), set)

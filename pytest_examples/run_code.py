@@ -109,8 +109,12 @@ class Arg:
         elif isinstance(v, set):
             # NOTE! this is not recursive
             items: set[Any] = v
-            ordered = ', '.join(repr(x) for x in sorted(items))
-            self.data = f'{{{ordered}}}'
+            try:
+                ordered_items = sorted(items)
+            except TypeError:
+                ordered_items = sorted(items, key=repr)
+            ordered = ', '.join(repr(x) for x in ordered_items)
+            self.data = f'{{{ordered}}}' if items else 'set()'
         else:
             self.data = re.sub('0x[a-f0-9]{8,12}>', '0x0123456789ab>', str(v))
 
