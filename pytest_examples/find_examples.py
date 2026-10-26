@@ -75,7 +75,7 @@ class CodeExample:
         This works on the format `py foo="bar" spam="with space"`.
         """
         settings: dict[str, str] = {}
-        for m in re.finditer(r'([^{\s]+?)=([\'"])(.+?)\2', self.prefix):
+        for m in re.finditer(r'([^{\s]+?)=([\'"])(.*?)\2', self.prefix):
             settings[m.group(1)] = m.group(3)
         return settings
 
@@ -86,10 +86,7 @@ class CodeExample:
         """
         tags = shlex.split(self.prefix.strip(' {}'))
         tags = {p.lstrip('.') for p in tags if p}
-        try:
-            tags.remove('py')
-        except KeyError:
-            pass
+        tags = {p for p in tags if p.lower() != 'py'}
 
         return tags
 
@@ -149,8 +146,7 @@ def _extract_code_chunks(
     examples: list[CodeExample] = []
     for m_code in re.finditer(r'(^ *```)( *)(.*?)\n(.+?)\1', text, flags=re.MULTILINE | re.DOTALL):
         group1, group2, prefix, source = m_code.groups()
-        prefix = prefix.lower()
-        if prefix.startswith(('py', '{.py')):
+        if prefix.lower().startswith(('py', '{.py')):
             start_line = line_offset + text[: m_code.start()].count('\n') + 1
             source_dedent, indent = remove_indent(source)
             # 1 for the newline

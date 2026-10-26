@@ -313,3 +313,20 @@ def test_prefix_settings(prefix, prefix_settings):
 def test_prefix_tags(prefix, prefix_tags):
     ex = CodeExample.create('foobar', prefix=prefix)
     assert ex.prefix_tags() == prefix_tags
+
+
+@pytest.mark.parametrize('language', ['py', 'PY', '{.Py'])
+def test_found_prefix_preserves_settings(tmp_path, language):
+    prefix = language + ' name="CaseSensitiveİ" empty="" other=\'\''
+    code = f'```{prefix}\nprint("example")\n```\n'
+    path = tmp_path / 'example.md'
+    path.write_text(code, encoding='utf-8')
+    [example] = find_examples(path)
+    assert example.prefix == prefix
+    assert example.prefix_settings() == {'name': 'CaseSensitiveİ', 'empty': '', 'other': ''}
+    assert code[example.start_index : example.end_index] == example.source == 'print("example")\n'
+
+
+@pytest.mark.parametrize('prefix', ['py Tag', 'PY Tag', '{.Py .Tag}'])
+def test_prefix_tags_mixed_case(prefix):
+    assert CodeExample.create('pass', prefix=prefix).prefix_tags() == {'Tag'}
