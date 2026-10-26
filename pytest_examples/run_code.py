@@ -319,11 +319,14 @@ def find_print(node: Any, line: int) -> tuple[int, int] | None:
         found_loc = find_print_in_body(node.body, line)
         if found_loc is not None:
             return found_loc
-        if isinstance(node, ast.If):
+        if isinstance(node, ast.If | ast.For | ast.AsyncFor | ast.While | ast.Try):
             found_loc = find_print_in_body(node.orelse, line)
             if found_loc is not None:
                 return found_loc
-        elif isinstance(node, ast.Try):
+        if isinstance(node, ast.Try):
+            found_loc = find_print_in_body(node.finalbody, line)
+            if found_loc is not None:
+                return found_loc
             for node_handler in node.handlers:
                 found_loc = find_print(node_handler, line)
                 if found_loc is not None:

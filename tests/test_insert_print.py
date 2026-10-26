@@ -476,3 +476,20 @@ other.does_print()
     other_file.write_text(('\n' * 30) + other_code)
 
     eval_example.run_print_check(example, call='main')
+
+
+@pytest.mark.parametrize(
+    'source',
+    [
+        "for _ in []:\n    pass\nelse:\n    print('x')\n",
+        "while False:\n    pass\nelse:\n    print('x')\n",
+        "try:\n    pass\nexcept ValueError:\n    pass\nelse:\n    print('x')\n",
+        "try:\n    pass\nfinally:\n    print('x')\n",
+    ],
+)
+def test_find_print_control_flow_branches(source, eval_example):
+    line = next(i for i, text in enumerate(source.splitlines(), 1) if 'print(' in text)
+    example = CodeExample.create(source)
+    assert find_print_location(example, line) == (line, 4)
+    expected = CodeExample.create(source + '    #> x\n')
+    eval_example.run_print_check(expected)
