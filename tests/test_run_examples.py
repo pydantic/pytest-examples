@@ -50,16 +50,19 @@ def test_find_run_examples(example: CodeExample, eval_example: EvalExample):
     result = pytester.runpytest('-p', 'no:pretty', '-v')
     result.assert_outcomes(passed=1, failed=1)
 
-    assert result.outlines[-11].startswith('_ _ _ _ ')
-    assert result.outlines[-10:-3] == [
+    expected = [
         '',
         '    a = 1',
         '    b = 2',
         '>   assert a + b == 4',
+        '           ^^^^^^^^^^',
         'E   AssertionError',
         '',
         'my_file.md:12: AssertionError',
     ]
+
+    assert result.outlines[-3 - len(expected) - 1].startswith('_ _ _ _ ')
+    assert result.outlines[-3 - len(expected) : -3] == expected
 
 
 def test_ruff_ok(pytester: pytest.Pytester):
