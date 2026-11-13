@@ -140,14 +140,19 @@ class PrintStatement:
 
 
 class MockPrintFunction:
-    __slots__ = 'file', 'include_print', 'statements'
+    __slots__ = 'file', 'include_print', 'original_print', 'statements'
 
     def __init__(self, file: Path, include_print: IncludePrint | None) -> None:
         self.file = file
         self.statements: list[PrintStatement] = []
         self.include_print = include_print
+        self.original_print: Callable[..., None] = print
 
     def __call__(self, *args: Any, sep: str = ' ', **kwargs: Any) -> None:
+        if kwargs.get('file') is not None and kwargs['file'] is not sys.stdout:
+            self.original_print(*args, sep=sep, **kwargs)
+            return
+
         frame = inspect.stack()[parent_frame_id]
 
         if self._include_file(frame, args):
