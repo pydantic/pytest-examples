@@ -147,7 +147,7 @@ def _extract_code_chunks(
     path: Path, text: str, group: UUID, *, line_offset: int = 0, index_offset: int = 0
 ) -> list[CodeExample]:
     examples: list[CodeExample] = []
-    for m_code in re.finditer(r'(^ *```)( *)(.*?)\n(.+?)\1', text, flags=re.MULTILINE | re.DOTALL):
+    for m_code in re.finditer(r'(^ *```)( *)(.*?)\n(.+?)^\1`*[ \t]*$', text, flags=re.MULTILINE | re.DOTALL):
         group1, group2, prefix, source = m_code.groups()
         prefix = prefix.lower()
         if prefix.startswith(('py', '{.py')):
