@@ -253,7 +253,12 @@ class InsertPrintStatements:
             output = re.sub(r' +$', '', output, flags=re.MULTILINE)
             # have to use triple single quotes in python since we're already in a double quotes docstring
             quote = "'''" if in_python else '"""'
-            lines.insert(line_index + 1, indent(f'{quote}\n{output}\n{quote}', indent_str))
+            if quote in output:
+                lines.insert(
+                    line_index + 1, '\n'.join(f'{indent_str}{comment_prefix}{line}' for line in output.split('\n'))
+                )
+            else:
+                lines.insert(line_index + 1, indent(f'{quote}\n{output}\n{quote}', indent_str))
 
 
 comment_prefix = '#> '
