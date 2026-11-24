@@ -38,7 +38,7 @@ class EvalExample:
         line_length: int = DEFAULT_LINE_LENGTH,
         quotes: Literal['single', 'double', 'either'] = 'either',
         magic_trailing_comma: bool = True,
-        target_version: Literal['py37', 'py38', 'py39', 'py310'] = 'py37',
+        target_version: Literal['py37', 'py38', 'py39', 'py310', 'py311'] = 'py37',
         upgrade: bool = False,
         isort: bool = False,
         ruff_line_length: int | None = None,
