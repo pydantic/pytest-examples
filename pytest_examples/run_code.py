@@ -5,9 +5,11 @@ import asyncio
 import dataclasses
 import importlib.util
 import inspect
+import io
 import re
 import sys
-from collections.abc import Callable, Sequence
+import tokenize
+from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
 from importlib.abc import Loader
 from pathlib import Path
@@ -217,19 +219,41 @@ class InsertPrintStatements:
         assert self.print_func is not None, 'print statements not being inserted'
 
         lines = example.source.splitlines()
+        tree = ast.parse(example.source, filename=example.path.name)
+        print_locations = _find_print_locations(tree)
 
-        old_line_no = -1
+        executed_by_loc: dict[tuple[int, int], list[PrintStatement]] = {}
+        executed_lines: set[int] = set()
+        covered_comment_lines: set[int] = set()
 
-        for s in reversed(self.print_func.statements):
-            line_no, col = find_print_location(example, s.line_no)
+        for s in self.print_func.statements:
+            executed_lines.add(s.line_no)
+            loc = print_locations.get(s.line_no) or (s.line_no, 0)
+            line_no, _ = loc
+            covered_comment_lines.update(range(s.line_no, line_no + 1))
+            covered_comment_lines.update(_trailing_comment_lines(lines, line_no - 1))
+            executed_by_loc.setdefault(loc, []).append(s)
 
-            # switch from 1-indexed line number to 0-indexed indexes into lines
-            line_index = line_no - 1
+        # Each action is (start_idx, delete_end_idx_or_None, col, executed_stmts_or_None)
+        actions: list[tuple[int, int | None, int, list[PrintStatement] | None]] = [
+            (line_no - 1, None, col, stmts) for (line_no, col), stmts in executed_by_loc.items()
+        ]
+        for start_idx, end_idx in _find_unexecuted_triple_quote_blocks(lines, print_locations, executed_lines):
+            actions.append((start_idx, end_idx, 0, None))
+        for comment_line in _find_comment_output_lines(example.source, lines):
+            if comment_line not in covered_comment_lines:
+                actions.append((comment_line - 1, comment_line, 0, None))
 
-            if s.line_no != old_line_no:
-                remove_old_print(lines, line_index)
-            self._insert_print_args(lines, s, example.in_py_file(), line_index, col)
-            old_line_no = s.line_no
+        # Apply edits from bottom to top so deleting or inserting lines does not shift earlier indices
+        actions.sort(key=lambda a: a[0], reverse=True)
+        for start_idx, end_idx, col, stmts in actions:
+            if stmts is None:
+                assert end_idx is not None
+                del lines[start_idx:end_idx]
+            else:
+                remove_old_print(lines, start_idx)
+                for s in reversed(stmts):
+                    self._insert_print_args(lines, s, example.in_py_file(), start_idx, col)
 
         return '\n'.join(lines) + '\n'
 
@@ -257,7 +281,7 @@ class InsertPrintStatements:
 
 
 comment_prefix = '#> '
-comment_prefix_re = re.compile(f'^ *{re.escape(comment_prefix)}', re.MULTILINE)
+comment_prefix_re = re.compile(rf'^ *{re.escape(comment_prefix.rstrip())}(?: |$)', re.MULTILINE)
 triple_quotes_prefix_re = re.compile('^ *(?:"{3}|\'{3})', re.MULTILINE)
 
 
@@ -297,50 +321,72 @@ def find_print_location(example: CodeExample, line_no: int) -> tuple[int, int]:
     return find_print(m, line_no) or (line_no, 0)
 
 
-# ast nodes that have a body
-with_body = (
-    ast.Module,
-    ast.FunctionDef,
-    ast.If,
-    ast.Try,
-    ast.ExceptHandler,
-    ast.With,
-    ast.For,
-    ast.AsyncFor,
-    ast.AsyncFunctionDef,
-    ast.AsyncWith,
-    ast.While,
-    ast.ClassDef,
-)
+def _is_print_call(call: ast.Call) -> bool:
+    return isinstance(call.func, ast.Name) and call.func.id == 'print'
 
 
-def find_print(node: Any, line: int) -> tuple[int, int] | None:
-    if isinstance(node, with_body):
-        found_loc = find_print_in_body(node.body, line)
-        if found_loc is not None:
-            return found_loc
-        if isinstance(node, ast.If):
-            found_loc = find_print_in_body(node.orelse, line)
-            if found_loc is not None:
-                return found_loc
-        elif isinstance(node, ast.Try):
-            for node_handler in node.handlers:
-                found_loc = find_print(node_handler, line)
-                if found_loc is not None:
-                    return found_loc
+def _iter_statement_calls(node: ast.AST) -> Iterator[ast.Call]:
+    if isinstance(node, ast.Call):
+        cur: ast.expr = node
+        while isinstance(cur, ast.Call):
+            yield cur
+            cur = cur.func
     elif isinstance(node, ast.Expr):
-        return find_print(node.value, line)
-    elif isinstance(node, ast.Call):
-        if isinstance(node.func, ast.Name) and node.func.id == 'print' and node.lineno == line:
-            return expr_last_line(node), node.col_offset
-        return find_print(node.func, line)
+        yield from _iter_statement_calls(node.value)
+    elif isinstance(node, (ast.Module, ast.stmt, ast.ExceptHandler, ast.match_case)):
+        for child in ast.iter_child_nodes(node):
+            if isinstance(child, (ast.stmt, ast.ExceptHandler, ast.match_case)):
+                yield from _iter_statement_calls(child)
 
 
-def find_print_in_body(body: list[ast.stmt], line: int) -> tuple[int, int] | None:
-    for node in body:
-        found_loc = find_print(node, line)
-        if found_loc is not None:
-            return found_loc
+def _find_print_locations(tree: ast.AST) -> dict[int, tuple[int, int]]:
+    locations: dict[int, tuple[int, int]] = {}
+    for call in _iter_statement_calls(tree):
+        if _is_print_call(call):
+            locations.setdefault(call.lineno, (expr_last_line(call), call.col_offset))
+    return locations
+
+
+def _trailing_comment_lines(lines: list[str], line_index: int) -> Iterator[int]:
+    idx = line_index + 1
+    while idx < len(lines) and comment_prefix_re.search(lines[idx]):
+        yield idx + 1
+        idx += 1
+
+
+def _find_comment_output_lines(source: str, lines: list[str]) -> list[int]:
+    comment_lines: list[int] = []
+    for tok in tokenize.generate_tokens(io.StringIO(source).readline):
+        if tok.type == tokenize.COMMENT:
+            line_no = tok.start[0]
+            if comment_prefix_re.match(lines[line_no - 1]):
+                comment_lines.append(line_no)
+    return comment_lines
+
+
+def _find_unexecuted_triple_quote_blocks(
+    lines: list[str],
+    print_locations: dict[int, tuple[int, int]],
+    executed_lines: set[int],
+) -> list[tuple[int, int]]:
+    removals: list[tuple[int, int]] = []
+    for call_line, (line_no, col) in print_locations.items():
+        if call_line in executed_lines or line_no >= len(lines):
+            continue
+        opening = lines[line_no].rstrip()
+        if opening not in (' ' * col + '"""', ' ' * col + "'''"):
+            continue
+        end_idx = next((i for i in range(line_no + 1, len(lines)) if lines[i].rstrip() == opening), None)
+        if end_idx is not None:
+            removals.append((line_no, end_idx + 1))
+    return removals
+
+
+def find_print(node: ast.AST, line: int) -> tuple[int, int] | None:
+    for call in _iter_statement_calls(node):
+        if _is_print_call(call) and call.lineno == line:
+            return expr_last_line(call), call.col_offset
+    return None
 
 
 def expr_last_line(c: ast.expr) -> int:

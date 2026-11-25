@@ -133,6 +133,42 @@ async with foobar():
         (4, 4),
         id='async-function',
     ),
+    pytest.param(
+        """\
+try:
+    pass
+except ValueError:
+    pass
+else:
+    print(1)
+    #> 1
+""",
+        6,
+        (6, 4),
+        id='try-else',
+    ),
+    pytest.param(
+        """\
+try:
+    pass
+finally:
+    print(1)
+    #> 1
+""",
+        4,
+        (4, 4),
+        id='try-finally',
+    ),
+    pytest.param(
+        """\
+match x:
+    case 1:
+        print(1)
+""",
+        3,
+        (3, 8),
+        id='match-case',
+    ),
 ]
 
 
@@ -476,3 +512,264 @@ other.does_print()
     other_file.write_text(('\n' * 30) + other_code)
 
     eval_example.run_print_check(example, call='main')
+
+
+def test_find_print_location_fallback():
+    example = CodeExample.create('other.does_print()\n')
+    assert find_print_location(example, 1) == (1, 0)
+
+
+def test_print_check_unexecuted_except(tmp_path, eval_example):
+    python_code = """\
+class Model:
+    def __init__(self, num: complex) -> None:
+        self.num = num
+
+x = 1
+try:
+    Model(num=complex(1))
+except ValueError as exc:
+    print(repr(exc))
+    #> ValueError('bad')
+"""
+    example = CodeExample.create(python_code, path=tmp_path / 'test.md')
+
+    # eval_example.run() does not check print assertions
+    eval_example.run(example)
+
+    with pytest.raises(Failed) as exc_info:
+        eval_example.run_print_check(example)
+    assert str(exc_info.value) == (
+        'Print output changed code:\n'
+        '  --- before\n'
+        '  +++ after\n'
+        '  @@ -5,6 +5,5 @@\n'
+        '   x = 1\n'
+        '   try:\n'
+        '       Model(num=complex(1))\n'
+        '   except ValueError as exc:\n'
+        '       print(repr(exc))\n'
+        "  -    #> ValueError('bad')\n"
+    )
+
+
+@pytest.mark.parametrize(
+    'filename,quote',
+    [
+        ('test.md', '"""'),
+        ('test.py', "'''"),
+    ],
+)
+def test_print_check_unexecuted_except_multiline(tmp_path, eval_example, filename: str, quote: str):
+    python_code = (
+        'try:\n'
+        '    x = 1\n'
+        'except ValueError as exc:\n'
+        '    print(exc)\n'
+        f'    {quote}\n'
+        '    multiline error\n'
+        '    more details\n'
+        f'    {quote}\n'
+    )
+    example = CodeExample.create(python_code, path=tmp_path / filename)
+
+    with pytest.raises(Failed) as exc_info:
+        eval_example.run_print_check(example)
+    assert f'  -    {quote}\n  -    multiline error\n  -    more details\n  -    {quote}' in str(exc_info.value)
+
+
+def test_print_check_unexecuted_mixed_and_branches(tmp_path, eval_example):
+    python_code = """\
+print('before')
+#> before
+try:
+    raise ValueError('actual')
+except KeyError as exc:
+    print(exc)
+    #> missing
+except ValueError as exc:
+    print(exc)
+    #> actual
+else:
+    print('else')
+    #> else
+if False:
+    print('dead')
+    '''
+    dead line
+    '''
+for i in []:
+    print(i)
+    #> 0
+print('after')
+#> after
+"""
+    example = CodeExample.create(python_code, path=tmp_path / 'test.md')
+
+    with pytest.raises(Failed) as exc_info:
+        eval_example.run_print_check(example)
+    diff = str(exc_info.value)
+    assert '  -    #> missing\n' in diff
+    assert '  -    #> else\n' in diff
+    assert "  -    '''\n  -    dead line\n  -    '''\n" in diff
+    assert '  -    #> 0\n' in diff
+    assert '-#> before' not in diff
+    assert '-    #> actual' not in diff
+    assert '-#> after' not in diff
+
+
+def test_print_check_unexecuted_safe_literals(tmp_path, eval_example):
+    python_code = '''\
+s = """
+#> inside string literal
+"""
+if False:
+    print('one-line string follows')
+    """not a print output block"""
+if False:
+    print('dedented string follows')
+"""outer"""
+if False:
+    print('mismatched close indent')
+    """
+    text
+"""
+if False:
+    print('at end of example')
+'''
+    example = CodeExample.create(python_code, path=tmp_path / 'test.md')
+    eval_example.run_print_check(example)
+
+
+def test_print_update_removes_unexecuted_except(pytester: pytest.Pytester):
+    md_file = pytester.makefile(
+        '.md',
+        my_file="""
+```py
+try:
+    x = 1
+except ValueError as exc:
+    print(exc)
+    #> boom
+```
+""",
+    )
+    pytester.makepyfile(
+        """
+from pytest_examples import CodeExample, EvalExample, find_examples
+import pytest
+
+@pytest.mark.parametrize('example', find_examples('.'), ids=str)
+def test_examples(example: CodeExample, eval_example: EvalExample):
+    if eval_example.update_examples:
+        eval_example.run_print_update(example)
+    else:
+        eval_example.run_print_check(example)
+"""
+    )
+
+    fail_result = pytester.runpytest('-p', 'no:pretty')
+    fail_result.assert_outcomes(failed=1)
+
+    update_result = pytester.runpytest('-p', 'no:pretty', '--update-examples', '--update-examples-disable-summary')
+    update_result.assert_outcomes(passed=1)
+    assert md_file.read_text() == (
+        """\
+```py
+try:
+    x = 1
+except ValueError as exc:
+    print(exc)
+```"""
+    )
+
+
+def test_print_check_unexecuted_different_file_call(tmp_path, eval_example):
+    other_file = tmp_path / 'other_unexec.py'
+    other_file.write_text('def does_print():\n    print("hello")\n')
+    sys.path.append(str(tmp_path))
+    try:
+        python_code = """\
+import other_unexec
+
+try:
+    x = 1
+except ValueError:
+    other_unexec.does_print()
+    #> hello
+"""
+        example = CodeExample.create(python_code, path=tmp_path / 'test.md')
+        eval_example.include_print = lambda p, f, a: True
+
+        with pytest.raises(Failed) as exc_info:
+            eval_example.run_print_check(example)
+        assert '-    #> hello' in str(exc_info.value)
+    finally:
+        sys.modules.pop('other_unexec', None)
+        sys.path.remove(str(tmp_path))
+
+
+def test_print_check_executed_and_unexecuted_out_of_order(tmp_path, eval_example):
+    python_code = """\
+def a():
+    print('a')
+    #> a
+
+
+def b():
+    print('b')
+    #> b
+
+
+def uncalled():
+    print('never')
+    #> never
+
+
+b()
+a()
+"""
+    example = CodeExample.create(python_code, path=tmp_path / 'test.md')
+    with pytest.raises(Failed) as exc_info:
+        eval_example.run_print_check(example)
+    diff = str(exc_info.value)
+    assert '  -    #> never\n' in diff
+    assert '-    #> a' not in diff
+    assert '-    #> b' not in diff
+    assert example.source.endswith('b()\na()\n')
+
+
+def test_print_check_match_case(tmp_path, eval_example):
+    python_code = """\
+x = 1
+match x:
+    case 1:
+        print('one')
+        #> one
+    case 2:
+        print('two')
+        #> two
+"""
+    example = CodeExample.create(python_code, path=tmp_path / 'test.md')
+    with pytest.raises(Failed) as exc_info:
+        eval_example.run_print_check(example)
+    diff = str(exc_info.value)
+    assert '  -        #> two\n' in diff
+    assert '-        #> one' not in diff
+
+
+def test_print_check_try_else_finally_executed(tmp_path, eval_example):
+    python_code = """\
+try:
+    x = 1
+except ValueError:
+    pass
+else:
+    print(x)
+    #> 1
+finally:
+    print('done')
+    #> done
+"""
+    example = CodeExample.create(python_code, path=tmp_path / 'test.md')
+    eval_example.run_print_check(example)
